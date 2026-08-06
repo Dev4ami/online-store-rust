@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Pesanan #{{ order.number }} — Toko Online{% endblock %}
+
+{% block content %}
+<div class="order-confirm">
+    <h1>Terima kasih! Pesanan diterima</h1>
+    <p class="order-meta">
+        Nomor Pesanan: <strong>#{{ order.number }}</strong> &middot;
+        Status: <span class="badge-status">{{ order.status_label() }}</span>
+    </p>
+</div>
+
+<div class="order-box">
+    <h3>Item</h3>
+    <table class="cart-table">
+        <thead>
+            <tr><th>Produk</th><th>Harga</th><th>Jumlah</th><th>Subtotal</th></tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.product_name }}</td>
+                <td>{{ item.unit_price_display() }}</td>
+                <td>{{ item.qty }}</td>
+                <td>{{ item.line_total_display() }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="total-label">Total</td>
+                <td class="grand-total">{{ order.total_display() }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <h3>Pengiriman</h3>
+    <p>
+        {{ order.customer_name }}<br>
+        {{ order.email }}{% if order.phone != "" %} &middot; {{ order.phone }}{% endif %}<br>
+        {{ order.shipping_address }}
+    </p>
+
+    <div class="cart-actions">
+        <a href="/" class="btn-secondary">Lanjut Belanja</a>
+        {% match user_name %}
+            {% when Some(_) %}<a href="/orders" class="btn-secondary">Lihat Semua Pesanan</a>
+            {% when None %}
+        {% endmatch %}
+    </div>
+</div>
+{% endblock %}

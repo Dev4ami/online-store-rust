@@ -13,6 +13,7 @@ use crate::models::product::{Product, format_rupiah};
 const CART_KEY: &str = "cart";
 
 /// Satu baris keranjang: produk + qty + subtotal (untuk ditampilkan).
+#[derive(Clone)]
 pub struct CartLine {
     pub product: Product,
     pub qty: i32,

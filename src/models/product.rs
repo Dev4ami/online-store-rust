@@ -66,8 +66,12 @@ impl Product {
         .await
     }
 
-    /// Ambil banyak produk aktif sekaligus (untuk isi keranjang).
-    pub async fn by_ids(pool: &PgPool, ids: &[Uuid]) -> Result<Vec<Product>, sqlx::Error> {
+    /// Ambil banyak produk aktif sekaligus (untuk isi keranjang / checkout).
+    /// Generik atas executor agar bisa dipakai di dalam transaksi maupun pool.
+    pub async fn by_ids<'e, E>(executor: E, ids: &[Uuid]) -> Result<Vec<Product>, sqlx::Error>
+    where
+        E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+    {
         sqlx::query_as!(
             Product,
             r#"
@@ -77,7 +81,7 @@ impl Product {
             "#,
             ids
         )
-        .fetch_all(pool)
+        .fetch_all(executor)
         .await
     }
 }

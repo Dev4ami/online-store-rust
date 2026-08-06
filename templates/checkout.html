@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout — Toko Online{% endblock %}
+
+{% block content %}
+<h1>Checkout</h1>
+
+{% match error %}
+    {% when Some(msg) %}<p class="form-error">{{ msg }}</p>
+    {% when None %}
+{% endmatch %}
+
+<div class="checkout-layout">
+    <form action="/checkout" method="post" class="checkout-form">
+        <h3>Data Pengiriman</h3>
+        <label>Nama Penerima
+            <input type="text" name="customer_name" value="{{ customer_name }}" required>
+        </label>
+        <label>Email
+            <input type="email" name="email" value="{{ email }}" required placeholder="nama@contoh.com">
+        </label>
+        <label>No. Telepon
+            <input type="tel" name="phone" value="{{ phone }}" placeholder="08xxxxxxxxxx">
+        </label>
+        <label>Alamat Pengiriman
+            <textarea name="shipping_address" rows="3" required>{{ shipping_address }}</textarea>
+        </label>
+        <button type="submit" class="btn-primary">Buat Pesanan</button>
+    </form>
+
+    <aside class="checkout-summary">
+        <h3>Ringkasan Pesanan</h3>
+        <table class="summary-table">
+            {% for line in lines %}
+            <tr>
+                <td>{{ line.product.name }} &times; {{ line.qty }}</td>
+                <td class="right">{{ line.line_total_display() }}</td>
+            </tr>
+            {% endfor %}
+            <tr class="summary-total">
+                <td>Total</td>
+                <td class="right">{{ grand_total }}</td>
+            </tr>
+        </table>
+        <p class="note">Pembayaran akan tersedia di tahap berikutnya. Pesanan dibuat dengan status <strong>Menunggu Pembayaran</strong>.</p>
+    </aside>
+</div>
+{% endblock %}

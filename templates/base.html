@@ -18,6 +18,7 @@
             </a>
             {% match user_name %}
                 {% when Some(nama) %}
+                <a href="/orders">Pesanan</a>
                 <span class="user-greet">Halo, {{ nama }}</span>
                 <form action="/logout" method="post" class="logout-form">
                     <button type="submit" class="btn-link-nav">Keluar</button>

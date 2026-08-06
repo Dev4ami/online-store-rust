@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Pesanan Saya — Toko Online{% endblock %}
+
+{% block content %}
+<h1>Pesanan Saya</h1>
+
+{% if orders.is_empty() %}
+<p class="empty">Belum ada pesanan. <a href="/">Belanja dulu</a>.</p>
+{% else %}
+<table class="cart-table">
+    <thead>
+        <tr><th>No.</th><th>Tanggal</th><th>Status</th><th>Total</th><th></th></tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr>
+            <td>#{{ order.number }}</td>
+            <td>{{ order.created_at.format("%d-%m-%Y %H:%M") }}</td>
+            <td>{{ order.status_label() }}</td>
+            <td>{{ order.total_display() }}</td>
+            <td><a href="/order/{{ order.id }}">Lihat</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}
