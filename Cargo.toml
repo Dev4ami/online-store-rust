@@ -13,8 +13,11 @@ rust_decimal = "1.42.1"
 serde = { version = "1.0.229", features = ["derive"] }
 sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "migrate", "rust_decimal", "chrono", "uuid"] }
 thiserror = "2.0.19"
+time = "0.3.55"
 tokio = { version = "1.53.1", features = ["full"] }
 tower-http = { version = "0.7.0", features = ["fs", "trace", "compression-gzip"] }
+tower-sessions = "0.14"
+tower-sessions-sqlx-store = { version = "0.15.0", features = ["postgres"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 uuid = { version = "1.24.0", features = ["v4", "serde"] }

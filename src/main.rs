@@ -1,3 +1,4 @@
+mod cart;
 mod config;
 mod db;
 mod error;
@@ -7,10 +8,12 @@ mod state;
 mod templates;
 
 use axum::Router;
-use axum::routing::get;
+use axum::routing::{get, post};
 use tower_http::compression::CompressionLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
+use tower_sessions::{Expiry, SessionManagerLayer};
+use tower_sessions_sqlx_store::PostgresStore;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::config::Config;
@@ -30,13 +33,25 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("menghubungkan ke database & menjalankan migrasi...");
     let pool = db::connect_and_migrate(&config.database_url).await?;
 
+    // Session store di Postgres (persist lintas restart).
+    let session_store = PostgresStore::new(pool.clone());
+    session_store.migrate().await?;
+    let session_layer = SessionManagerLayer::new(session_store)
+        .with_secure(false) // set true di produksi (HTTPS)
+        .with_expiry(Expiry::OnInactivity(time::Duration::days(30)));
+
     let state = AppState { pool };
 
     let app = Router::new()
         .route("/", get(handlers::catalog::index))
         .route("/product/{slug}", get(handlers::catalog::detail))
         .route("/health", get(handlers::catalog::health))
+        .route("/cart", get(handlers::cart::view))
+        .route("/cart/add", post(handlers::cart::add))
+        .route("/cart/update", post(handlers::cart::update))
+        .route("/cart/remove", post(handlers::cart::remove))
         .nest_service("/static", ServeDir::new("static"))
+        .layer(session_layer)
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())
         .with_state(state);

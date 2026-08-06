@@ -19,7 +19,17 @@
 
         {% if product.stock > 0 %}
         <p class="stock in-stock">Stok tersedia: {{ product.stock }}</p>
-        <button class="btn-primary" disabled>Tambah ke Keranjang (segera)</button>
+        <form hx-post="/cart/add"
+              hx-target="#cart-badge"
+              hx-swap="none"
+              class="add-form">
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+            <label class="qty-label">Jumlah
+                <input type="number" name="qty" value="1" min="1" max="{{ product.stock }}" class="qty-input">
+            </label>
+            <button type="submit" class="btn-primary">Tambah ke Keranjang</button>
+        </form>
+        <p id="add-status" class="add-status"></p>
         {% else %}
         <p class="stock out-stock">Stok habis</p>
         {% endif %}

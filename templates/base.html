@@ -12,6 +12,10 @@
         <a class="brand" href="/">Toko&nbsp;Online</a>
         <nav>
             <a href="/">Katalog</a>
+            <a href="/cart" class="cart-link">
+                Keranjang
+                <span id="cart-badge" class="cart-badge{% if cart_count == 0 %} hidden{% endif %}">{{ cart_count }}</span>
+            </a>
         </nav>
     </header>
 

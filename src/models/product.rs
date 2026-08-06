@@ -50,11 +50,41 @@ impl Product {
         .fetch_optional(pool)
         .await
     }
+
+    /// Ambil satu produk aktif berdasarkan id.
+    pub async fn by_id(pool: &PgPool, id: Uuid) -> Result<Option<Product>, sqlx::Error> {
+        sqlx::query_as!(
+            Product,
+            r#"
+            SELECT id, slug, name, description, price, stock, image_url
+            FROM products
+            WHERE id = $1 AND is_active = TRUE
+            "#,
+            id
+        )
+        .fetch_optional(pool)
+        .await
+    }
+
+    /// Ambil banyak produk aktif sekaligus (untuk isi keranjang).
+    pub async fn by_ids(pool: &PgPool, ids: &[Uuid]) -> Result<Vec<Product>, sqlx::Error> {
+        sqlx::query_as!(
+            Product,
+            r#"
+            SELECT id, slug, name, description, price, stock, image_url
+            FROM products
+            WHERE id = ANY($1) AND is_active = TRUE
+            "#,
+            ids
+        )
+        .fetch_all(pool)
+        .await
+    }
 }
 
 /// Format Decimal jadi Rupiah dengan pemisah ribuan titik.
 /// Contoh: 1250000.00 -> "Rp1.250.000". Pecahan sen dibuang (harga rupiah bulat).
-fn format_rupiah(value: Decimal) -> String {
+pub fn format_rupiah(value: Decimal) -> String {
     let bulat = value.trunc().abs();
     let digits = bulat.to_string(); // tanpa desimal karena sudah trunc
     let mut hasil = String::new();

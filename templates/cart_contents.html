@@ -1,0 +1,52 @@
+{# Partial isi keranjang. Dipakai untuk swap HTMX (cart page) & OOB badge (product page). #}
+<div id="cart-contents">
+    {% if lines.is_empty() %}
+    <p class="empty">Keranjang kosong. <a href="/">Belanja dulu</a>.</p>
+    {% else %}
+    <table class="cart-table">
+        <thead>
+            <tr><th>Produk</th><th>Harga</th><th>Jumlah</th><th>Subtotal</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for line in lines %}
+            <tr>
+                <td><a href="/product/{{ line.product.slug }}">{{ line.product.name }}</a></td>
+                <td>{{ line.product.price_display() }}</td>
+                <td>
+                    <form hx-post="/cart/update" hx-target="#cart-contents" hx-swap="outerHTML"
+                          hx-trigger="change from:find input[name='qty']" class="qty-form">
+                        <input type="hidden" name="product_id" value="{{ line.product.id }}">
+                        <input type="number" name="qty" value="{{ line.qty }}" min="0"
+                               max="{{ line.product.stock }}" class="qty-input">
+                    </form>
+                </td>
+                <td>{{ line.line_total_display() }}</td>
+                <td>
+                    <form hx-post="/cart/remove" hx-target="#cart-contents" hx-swap="outerHTML">
+                        <input type="hidden" name="product_id" value="{{ line.product.id }}">
+                        <button type="submit" class="btn-link" title="Hapus">✕</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="total-label">Total</td>
+                <td class="grand-total">{{ grand_total }}</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+    <div class="cart-actions">
+        <a href="/" class="btn-secondary">Lanjut Belanja</a>
+        <button class="btn-primary" disabled title="Menyusul di batch checkout">Checkout (segera)</button>
+    </div>
+    {% endif %}
+</div>
+
+{# OOB: sinkronkan badge keranjang di header pada setiap respons. #}
+<span id="cart-badge" class="cart-badge{% if cart_count == 0 %} hidden{% endif %}" hx-swap-oob="true">{{ cart_count }}</span>
+
+{# OOB: pesan status untuk halaman produk (kosong di halaman cart). #}
+<p id="add-status" class="add-status" hx-swap-oob="true">Ditambahkan ke keranjang ✓</p>
