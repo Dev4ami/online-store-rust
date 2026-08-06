@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Masuk — Toko Online{% endblock %}
+
+{% block content %}
+<div class="auth-box">
+    <h1>Masuk</h1>
+
+    {% match error %}
+        {% when Some(msg) %}<p class="form-error">{{ msg }}</p>
+        {% when None %}
+    {% endmatch %}
+
+    <form action="/login" method="post" class="auth-form">
+        <label>Email
+            <input type="email" name="email" value="{{ email }}" required placeholder="nama@contoh.com">
+        </label>
+        <label>Password
+            <input type="password" name="password" required placeholder="Password">
+        </label>
+        <button type="submit" class="btn-primary">Masuk</button>
+    </form>
+
+    <p class="auth-alt">Belum punya akun? <a href="/register">Daftar di sini</a>.</p>
+</div>
+{% endblock %}

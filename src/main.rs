@@ -1,3 +1,4 @@
+mod auth;
 mod cart;
 mod config;
 mod db;
@@ -50,6 +51,9 @@ async fn main() -> anyhow::Result<()> {
         .route("/cart/add", post(handlers::cart::add))
         .route("/cart/update", post(handlers::cart::update))
         .route("/cart/remove", post(handlers::cart::remove))
+        .route("/register", get(handlers::auth::register_form).post(handlers::auth::register))
+        .route("/login", get(handlers::auth::login_form).post(handlers::auth::login))
+        .route("/logout", post(handlers::auth::logout))
         .nest_service("/static", ServeDir::new("static"))
         .layer(session_layer)
         .layer(CompressionLayer::new())

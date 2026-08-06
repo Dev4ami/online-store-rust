@@ -11,6 +11,7 @@ use crate::models::product::Product;
 pub struct IndexTemplate {
     pub products: Vec<Product>,
     pub cart_count: i32,
+    pub user_name: Option<String>,
 }
 
 #[derive(Template)]
@@ -18,6 +19,7 @@ pub struct IndexTemplate {
 pub struct ProductTemplate {
     pub product: Product,
     pub cart_count: i32,
+    pub user_name: Option<String>,
 }
 
 /// Halaman keranjang penuh.
@@ -27,6 +29,28 @@ pub struct CartTemplate {
     pub lines: Vec<CartLine>,
     pub grand_total: String,
     pub cart_count: i32,
+    pub user_name: Option<String>,
+}
+
+/// Halaman registrasi.
+#[derive(Template)]
+#[template(path = "register.html")]
+pub struct RegisterTemplate {
+    pub cart_count: i32,
+    pub user_name: Option<String>,
+    pub error: Option<String>,
+    pub email: String,
+    pub name: String,
+}
+
+/// Halaman login.
+#[derive(Template)]
+#[template(path = "login.html")]
+pub struct LoginTemplate {
+    pub cart_count: i32,
+    pub user_name: Option<String>,
+    pub error: Option<String>,
+    pub email: String,
 }
 
 /// Partial isi keranjang (untuk swap HTMX setelah update/remove).

@@ -5,6 +5,7 @@ use axum::extract::{Path, State};
 use axum::response::Html;
 use tower_sessions::Session;
 
+use crate::auth;
 use crate::cart::Cart;
 use crate::error::AppError;
 use crate::models::product::Product;
@@ -17,8 +18,9 @@ pub async fn index(
     session: Session,
 ) -> Result<Html<String>, AppError> {
     let cart_count = Cart::load(&session).await.total_qty();
+    let user_name = auth::current_user_name(&session, &state.pool).await;
     let products = Product::list_active(&state.pool).await?;
-    let html = IndexTemplate { products, cart_count }.render()?;
+    let html = IndexTemplate { products, cart_count, user_name }.render()?;
     Ok(Html(html))
 }
 
@@ -29,10 +31,11 @@ pub async fn detail(
     Path(slug): Path<String>,
 ) -> Result<Html<String>, AppError> {
     let cart_count = Cart::load(&session).await.total_qty();
+    let user_name = auth::current_user_name(&session, &state.pool).await;
     let product = Product::by_slug(&state.pool, &slug)
         .await?
         .ok_or(AppError::NotFound)?;
-    let html = ProductTemplate { product, cart_count }.render()?;
+    let html = ProductTemplate { product, cart_count, user_name }.render()?;
     Ok(Html(html))
 }
 

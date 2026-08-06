@@ -16,6 +16,16 @@
                 Keranjang
                 <span id="cart-badge" class="cart-badge{% if cart_count == 0 %} hidden{% endif %}">{{ cart_count }}</span>
             </a>
+            {% match user_name %}
+                {% when Some(nama) %}
+                <span class="user-greet">Halo, {{ nama }}</span>
+                <form action="/logout" method="post" class="logout-form">
+                    <button type="submit" class="btn-link-nav">Keluar</button>
+                </form>
+                {% when None %}
+                <a href="/login">Masuk</a>
+                <a href="/register" class="nav-cta">Daftar</a>
+            {% endmatch %}
         </nav>
     </header>
 

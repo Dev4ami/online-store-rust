@@ -13,6 +13,9 @@ pub enum AppError {
 
     #[error("gagal render template: {0}")]
     Render(#[from] askama::Error),
+
+    #[error("kesalahan internal: {0}")]
+    Internal(String),
 }
 
 impl IntoResponse for AppError {
@@ -33,6 +36,14 @@ impl IntoResponse for AppError {
             }
             AppError::Render(e) => {
                 tracing::error!("render error: {e}");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "500 — Kesalahan Server",
+                    "Terjadi kesalahan pada server. Coba lagi nanti.".to_string(),
+                )
+            }
+            AppError::Internal(e) => {
+                tracing::error!("internal error: {e}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "500 — Kesalahan Server",
