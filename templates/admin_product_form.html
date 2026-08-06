@@ -1,0 +1,52 @@
+{% extends "admin_base.html" %}
+
+{% block title %}{% if editing %}Ubah Produk{% else %}Tambah Produk{% endif %} — Admin{% endblock %}
+
+{% block content %}
+<div class="admin-form-wrap">
+    <h1>{% if editing %}Ubah Produk{% else %}Tambah Produk{% endif %}</h1>
+
+    {% match error %}
+        {% when Some(msg) %}<p class="form-error">{{ msg }}</p>
+        {% when None %}
+    {% endmatch %}
+
+    <form action="{{ action_url }}" method="post" class="admin-form">
+        <label>
+            Nama
+            <input type="text" name="name" value="{{ name }}" required>
+        </label>
+        <label>
+            Slug (URL, unik) — mis. <code>kaos-polos-hitam</code>
+            <input type="text" name="slug" value="{{ slug }}" required>
+        </label>
+        <label>
+            Deskripsi
+            <textarea name="description" rows="4">{{ description }}</textarea>
+        </label>
+        <div class="form-row">
+            <label>
+                Harga (Rp, angka saja)
+                <input type="text" name="price" value="{{ price }}" inputmode="decimal" required>
+            </label>
+            <label>
+                Stok
+                <input type="text" name="stock" value="{{ stock }}" inputmode="numeric" required>
+            </label>
+        </div>
+        <label>
+            URL Gambar (opsional)
+            <input type="text" name="image_url" value="{{ image_url }}">
+        </label>
+        <label class="checkbox-label">
+            <input type="checkbox" name="is_active" {% if is_active %}checked{% endif %}>
+            Aktif (tampil di katalog)
+        </label>
+
+        <div class="cart-actions">
+            <button type="submit" class="btn-primary">Simpan</button>
+            <a href="/admin/products" class="btn-secondary">Batal</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

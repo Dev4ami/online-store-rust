@@ -99,6 +99,50 @@ pub struct PayTemplate {
     pub dummy_secret: String,
 }
 
+// --- Admin (M6) ---
+
+/// Daftar produk untuk admin (aktif + nonaktif).
+#[derive(Template)]
+#[template(path = "admin_products.html")]
+pub struct AdminProductsTemplate {
+    pub admin_name: String,
+    pub products: Vec<Product>,
+}
+
+/// Form tambah/ubah produk. `editing` menentukan judul; `action_url` tujuan POST.
+#[derive(Template)]
+#[template(path = "admin_product_form.html")]
+pub struct AdminProductFormTemplate {
+    pub admin_name: String,
+    pub error: Option<String>,
+    pub editing: bool,
+    pub action_url: String,
+    pub slug: String,
+    pub name: String,
+    pub description: String,
+    pub price: String,
+    pub stock: String,
+    pub image_url: String,
+    pub is_active: bool,
+}
+
+/// Daftar semua pesanan untuk admin.
+#[derive(Template)]
+#[template(path = "admin_orders.html")]
+pub struct AdminOrdersTemplate {
+    pub admin_name: String,
+    pub orders: Vec<Order>,
+}
+
+/// Detail satu pesanan untuk admin + aksi ubah status.
+#[derive(Template)]
+#[template(path = "admin_order_detail.html")]
+pub struct AdminOrderDetailTemplate {
+    pub admin_name: String,
+    pub order: Order,
+    pub items: Vec<OrderItem>,
+}
+
 /// Partial isi keranjang (untuk swap HTMX setelah update/remove).
 #[derive(Template)]
 #[template(path = "cart_contents.html")]

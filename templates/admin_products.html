@@ -1,0 +1,45 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Produk — Admin{% endblock %}
+
+{% block content %}
+<div class="admin-toolbar">
+    <h1>Produk</h1>
+    <a href="/admin/products/new" class="btn-primary">+ Tambah Produk</a>
+</div>
+
+<table class="cart-table admin-table">
+    <thead>
+        <tr>
+            <th>Nama</th><th>Slug</th><th>Harga</th><th>Stok</th><th>Status</th><th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in products %}
+        <tr>
+            <td>{{ p.name }}</td>
+            <td><code>{{ p.slug }}</code></td>
+            <td>{{ p.price_display() }}</td>
+            <td>{{ p.stock }}</td>
+            <td>
+                {% if p.is_active %}
+                <span class="badge-status">Aktif</span>
+                {% else %}
+                <span class="badge-status badge-off">Nonaktif</span>
+                {% endif %}
+            </td>
+            <td class="admin-actions">
+                <a href="/admin/products/{{ p.id }}/edit" class="btn-secondary btn-sm">Edit</a>
+                <form action="/admin/products/{{ p.id }}/delete" method="post"
+                      onsubmit="return confirm('Hapus produk &quot;{{ p.name }}&quot; permanen? Tindakan ini tak bisa dibatalkan.')">
+                    <button type="submit" class="btn-danger btn-sm">Hapus</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        {% if products.is_empty() %}
+        <tr><td colspan="6" class="empty-row">Belum ada produk. Klik "Tambah Produk".</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+{% endblock %}

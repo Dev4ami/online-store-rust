@@ -1,0 +1,66 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Pesanan #{{ order.number }} — Admin{% endblock %}
+
+{% block content %}
+<div class="admin-toolbar">
+    <h1>Pesanan #{{ order.number }}</h1>
+    <a href="/admin/orders" class="btn-secondary">&larr; Semua Pesanan</a>
+</div>
+
+<p class="order-meta">
+    Tanggal: {{ order.created_at_display() }} &middot;
+    Status: <span class="badge-status">{{ order.status_label() }}</span>
+    {% if order.status == "paid" %}
+        &middot; Dibayar {{ order.paid_at_display() }}
+        {% match order.payment_ref %}
+            {% when Some(ref_) %} &middot; Ref: {{ ref_ }}
+            {% when None %}
+        {% endmatch %}
+    {% endif %}
+</p>
+
+{% if order.is_pending() %}
+<div class="admin-order-actions">
+    <form action="/admin/orders/{{ order.id }}/pay" method="post">
+        <button type="submit" class="btn-primary">Tandai Lunas</button>
+    </form>
+    <form action="/admin/orders/{{ order.id }}/cancel" method="post"
+          onsubmit="return confirm('Batalkan pesanan #{{ order.number }}? Stok akan dikembalikan.')">
+        <button type="submit" class="btn-danger">Batalkan</button>
+    </form>
+</div>
+{% endif %}
+
+<div class="order-box">
+    <h3>Item</h3>
+    <table class="cart-table">
+        <thead>
+            <tr><th>Produk</th><th>Harga</th><th>Jumlah</th><th>Subtotal</th></tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.product_name }}</td>
+                <td>{{ item.unit_price_display() }}</td>
+                <td>{{ item.qty }}</td>
+                <td>{{ item.line_total_display() }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="total-label">Total</td>
+                <td class="grand-total">{{ order.total_display() }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <h3>Pengiriman</h3>
+    <p>
+        {{ order.customer_name }}<br>
+        {{ order.email }}{% if order.phone != "" %} &middot; {{ order.phone }}{% endif %}<br>
+        {{ order.shipping_address }}
+    </p>
+</div>
+{% endblock %}

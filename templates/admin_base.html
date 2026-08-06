@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Admin — Toko Online{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header class="site-header admin-header">
+        <a class="brand" href="/admin">Admin&nbsp;Toko</a>
+        <nav>
+            <a href="/admin/products">Produk</a>
+            <a href="/admin/orders">Pesanan</a>
+            <a href="/">&larr; ke Toko</a>
+            <span class="user-greet">Halo, {{ admin_name }}</span>
+            <form action="/logout" method="post" class="logout-form">
+                <button type="submit" class="btn-link-nav">Keluar</button>
+            </form>
+        </nav>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <p>&copy; Toko Online — panel admin.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Pesanan — Admin{% endblock %}
+
+{% block content %}
+<h1>Pesanan</h1>
+
+<table class="cart-table admin-table">
+    <thead>
+        <tr>
+            <th>#</th><th>Tanggal</th><th>Pelanggan</th><th>Email</th><th>Total</th><th>Status</th><th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for o in orders %}
+        <tr>
+            <td>#{{ o.number }}</td>
+            <td>{{ o.created_at_display() }}</td>
+            <td>{{ o.customer_name }}</td>
+            <td>{{ o.email }}</td>
+            <td>{{ o.total_display() }}</td>
+            <td><span class="badge-status">{{ o.status_label() }}</span></td>
+            <td><a href="/admin/orders/{{ o.id }}" class="btn-secondary btn-sm">Detail</a></td>
+        </tr>
+        {% endfor %}
+        {% if orders.is_empty() %}
+        <tr><td colspan="7" class="empty-row">Belum ada pesanan.</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+{% endblock %}

@@ -63,6 +63,10 @@ impl Order {
             None => "—".to_string(),
         }
     }
+    /// Waktu pembuatan order terformat (untuk daftar admin).
+    pub fn created_at_display(&self) -> String {
+        self.created_at.format("%d-%m-%Y %H:%M").to_string()
+    }
 }
 
 impl OrderItem {
@@ -263,6 +267,61 @@ impl Order {
         )
         .fetch_all(pool)
         .await
+    }
+
+    /// Semua order (untuk panel admin), terbaru dulu.
+    pub async fn list_all(pool: &PgPool) -> Result<Vec<Order>, sqlx::Error> {
+        sqlx::query_as!(
+            Order,
+            r#"
+            SELECT id, number, user_id, email, customer_name, phone,
+                   shipping_address, status, subtotal, total,
+                   payment_method, payment_ref,
+                   paid_at as "paid_at: chrono::DateTime<chrono::Utc>",
+                   created_at as "created_at: chrono::DateTime<chrono::Utc>"
+            FROM orders
+            ORDER BY created_at DESC
+            "#
+        )
+        .fetch_all(pool)
+        .await
+    }
+
+    /// Batalkan order (admin). Transaksional: hanya dari `pending`, dan mengembalikan
+    /// stok yang dikurangi saat checkout agar inventori konsisten.
+    /// Balikin `true` bila transisi pending -> cancelled terjadi.
+    pub async fn cancel(pool: &PgPool, order_id: Uuid) -> Result<bool, sqlx::Error> {
+        let mut tx = pool.begin().await?;
+
+        let rows = sqlx::query!(
+            r#"UPDATE orders SET status = 'cancelled' WHERE id = $1 AND status = 'pending'"#,
+            order_id,
+        )
+        .execute(&mut *tx)
+        .await?
+        .rows_affected();
+
+        if rows == 0 {
+            // Bukan pending (sudah paid/cancelled/tak ada) -> tak ada yang diubah.
+            tx.rollback().await?;
+            return Ok(false);
+        }
+
+        // Kembalikan stok. Item yang product_id-nya NULL (produk terhapus) otomatis terlewat.
+        sqlx::query!(
+            r#"
+            UPDATE products p
+               SET stock = stock + oi.qty
+              FROM order_items oi
+             WHERE oi.order_id = $1 AND oi.product_id = p.id
+            "#,
+            order_id,
+        )
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+        Ok(true)
     }
 
     /// Tandai order lunas. Idempoten: hanya berpengaruh saat status masih `pending`,

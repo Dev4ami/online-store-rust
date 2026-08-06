@@ -68,6 +68,17 @@ pub async fn remembers_order(session: &Session, id: Uuid) -> bool {
     ids.contains(&id)
 }
 
+/// Ambil user admin yang sedang login, atau `None` (bukan login / bukan admin).
+/// Handler admin memakai ini lalu balas 404 bila `None` (sembunyikan keberadaan panel).
+pub async fn current_admin(
+    session: &Session,
+    pool: &sqlx::PgPool,
+) -> Option<crate::models::user::User> {
+    let id = current_user_id(session).await?;
+    let user = crate::models::user::User::by_id(pool, id).await.ok().flatten()?;
+    user.is_admin().then_some(user)
+}
+
 /// Ambil nama tampilan user yang login (untuk header). Fallback ke email.
 pub async fn current_user_name(
     session: &Session,

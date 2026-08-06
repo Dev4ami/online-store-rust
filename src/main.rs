@@ -21,6 +21,7 @@ use tower_sessions_sqlx_store::PostgresStore;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::config::Config;
+use crate::models::user::User;
 use crate::payment::PaymentGateway;
 use crate::payment::dummy::DummyGateway;
 use crate::state::AppState;
@@ -38,6 +39,15 @@ async fn main() -> anyhow::Result<()> {
     let config = Config::from_env()?;
     tracing::info!("menghubungkan ke database & menjalankan migrasi...");
     let pool = db::connect_and_migrate(&config.database_url).await?;
+
+    // Promote akun admin dari env (idempoten; senyap bila email tak ada di DB).
+    if let Some(email) = &config.admin_email {
+        match User::promote_admin(&pool, email).await {
+            Ok(true) => tracing::info!("admin di-set: {email}"),
+            Ok(false) => {} // sudah admin atau email tak terdaftar
+            Err(e) => tracing::warn!("gagal promote admin {email}: {e}"),
+        }
+    }
 
     // Session store di Postgres (persist lintas restart).
     let session_store = PostgresStore::new(pool.clone());
@@ -72,6 +82,28 @@ async fn main() -> anyhow::Result<()> {
         .route("/orders", get(handlers::order::list))
         .route("/pay/{id}", get(handlers::payment::pay_page))
         .route("/webhook/payment", post(handlers::payment::webhook))
+        .route("/admin", get(handlers::admin::dashboard))
+        .route(
+            "/admin/products",
+            get(handlers::admin::products).post(handlers::admin::product_create),
+        )
+        .route("/admin/products/new", get(handlers::admin::product_new))
+        .route(
+            "/admin/products/{id}/edit",
+            get(handlers::admin::product_edit),
+        )
+        .route("/admin/products/{id}", post(handlers::admin::product_update))
+        .route(
+            "/admin/products/{id}/delete",
+            post(handlers::admin::product_delete),
+        )
+        .route("/admin/orders", get(handlers::admin::orders))
+        .route("/admin/orders/{id}", get(handlers::admin::order_detail))
+        .route("/admin/orders/{id}/pay", post(handlers::admin::order_pay))
+        .route(
+            "/admin/orders/{id}/cancel",
+            post(handlers::admin::order_cancel),
+        )
         .nest_service("/static", ServeDir::new("static"))
         .layer(session_layer)
         .layer(CompressionLayer::new())

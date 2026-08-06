@@ -9,15 +9,26 @@ pub struct User {
     pub email: String,
     pub password_hash: String,
     pub name: String,
-    #[allow(dead_code)] // dipakai mulai M6 (admin)
     pub role: String,
 }
 
 impl User {
-    /// Dipakai mulai M6 (admin panel).
-    #[allow(dead_code)]
+    /// True bila user punya peran admin.
     pub fn is_admin(&self) -> bool {
         self.role == "admin"
+    }
+
+    /// Promote user ke admin berdasarkan email (case-insensitive, idempoten).
+    /// Balikin `true` bila ada baris berubah (belum admin & email cocok).
+    pub async fn promote_admin(pool: &PgPool, email: &str) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            r#"UPDATE users SET role = 'admin' WHERE lower(email) = lower($1) AND role <> 'admin'"#,
+            email
+        )
+        .execute(pool)
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
     }
 
     /// Buat user baru. Email disimpan apa adanya; keunikan dijaga index lower(email).

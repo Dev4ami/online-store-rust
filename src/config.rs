@@ -9,6 +9,8 @@ pub struct Config {
     /// Rahasia bersama untuk verifikasi webhook gateway dummy (dev).
     /// Ganti dengan secret gateway asli saat gateway nyata dipilih.
     pub payment_dummy_secret: String,
+    /// Email akun yang otomatis dipromosikan jadi admin saat startup (opsional).
+    pub admin_email: Option<String>,
 }
 
 impl Config {
@@ -19,6 +21,11 @@ impl Config {
         let bind_addr = env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".to_string());
         let payment_dummy_secret =
             env::var("PAYMENT_DUMMY_SECRET").unwrap_or_else(|_| "dev-dummy-secret".to_string());
-        Ok(Self { database_url, bind_addr, payment_dummy_secret })
+        // Kosong dianggap tak diset (hindari promote email "" saat env ada tapi kosong).
+        let admin_email = env::var("ADMIN_EMAIL")
+            .ok()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
+        Ok(Self { database_url, bind_addr, payment_dummy_secret, admin_email })
     }
 }
