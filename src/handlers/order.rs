@@ -16,38 +16,12 @@ use crate::models::user::User;
 use crate::state::AppState;
 use crate::templates::{CheckoutTemplate, OrderDetailTemplate, OrdersTemplate};
 
-const RECENT_ORDERS_KEY: &str = "orders_recent";
-
 #[derive(Deserialize)]
 pub struct CheckoutForm {
     pub email: String,
     pub customer_name: String,
     pub phone: String,
     pub shipping_address: String,
-}
-
-/// Ingat order id di session agar guest bisa lihat konfirmasi miliknya.
-async fn remember_order(session: &Session, id: Uuid) {
-    let mut ids: Vec<Uuid> = session
-        .get(RECENT_ORDERS_KEY)
-        .await
-        .ok()
-        .flatten()
-        .unwrap_or_default();
-    if !ids.contains(&id) {
-        ids.push(id);
-    }
-    let _ = session.insert(RECENT_ORDERS_KEY, ids).await;
-}
-
-async fn remembers_order(session: &Session, id: Uuid) -> bool {
-    let ids: Vec<Uuid> = session
-        .get(RECENT_ORDERS_KEY)
-        .await
-        .ok()
-        .flatten()
-        .unwrap_or_default();
-    ids.contains(&id)
 }
 
 /// GET /checkout — form data pengiriman + ringkasan keranjang.
@@ -152,7 +126,7 @@ pub async fn checkout(
             // Kosongkan keranjang & ingat order agar konfirmasi bisa diakses.
             cart.items.clear();
             cart.save(&session).await.map_err(|_| AppError::NotFound)?;
-            remember_order(&session, order.id).await;
+            auth::remember_order(&session, order.id).await;
             Ok(Redirect::to(&format!("/order/{}", order.id)).into_response())
         }
         Err(CheckoutError::EmptyCart) => Ok(Redirect::to("/cart").into_response()),
@@ -175,7 +149,7 @@ pub async fn detail(
     // Kontrol akses.
     let current = auth::current_user_id(&session).await;
     let is_owner = matches!((order.user_id, current), (Some(o), Some(c)) if o == c);
-    if !is_owner && !remembers_order(&session, id).await {
+    if !is_owner && !auth::remembers_order(&session, id).await {
         return Err(AppError::NotFound);
     }
 

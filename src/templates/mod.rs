@@ -88,6 +88,17 @@ pub struct OrdersTemplate {
     pub orders: Vec<Order>,
 }
 
+/// Halaman bayar satu pesanan (mode dummy: form simulasi webhook).
+#[derive(Template)]
+#[template(path = "pay.html")]
+pub struct PayTemplate {
+    pub cart_count: i32,
+    pub user_name: Option<String>,
+    pub order: Order,
+    pub reference: String,
+    pub dummy_secret: String,
+}
+
 /// Partial isi keranjang (untuk swap HTMX setelah update/remove).
 #[derive(Template)]
 #[template(path = "cart_contents.html")]

@@ -6,6 +6,7 @@ use tower_sessions::Session;
 use uuid::Uuid;
 
 const USER_ID_KEY: &str = "user_id";
+const RECENT_ORDERS_KEY: &str = "orders_recent";
 
 /// Hash password plaintext dengan Argon2id + salt acak.
 pub fn hash_password(password: &str) -> Result<String, argon2::password_hash::Error> {
@@ -40,6 +41,31 @@ pub async fn logout(session: &Session) -> Result<(), tower_sessions::session::Er
 /// Ambil user_id yang sedang login (bila ada).
 pub async fn current_user_id(session: &Session) -> Option<Uuid> {
     session.get(USER_ID_KEY).await.ok().flatten()
+}
+
+/// Ingat order id di session agar guest bisa lihat konfirmasi & halaman bayar miliknya.
+pub async fn remember_order(session: &Session, id: Uuid) {
+    let mut ids: Vec<Uuid> = session
+        .get(RECENT_ORDERS_KEY)
+        .await
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+    if !ids.contains(&id) {
+        ids.push(id);
+    }
+    let _ = session.insert(RECENT_ORDERS_KEY, ids).await;
+}
+
+/// Apakah session mengingat order id ini (untuk kontrol akses guest).
+pub async fn remembers_order(session: &Session, id: Uuid) -> bool {
+    let ids: Vec<Uuid> = session
+        .get(RECENT_ORDERS_KEY)
+        .await
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+    ids.contains(&id)
 }
 
 /// Ambil nama tampilan user yang login (untuk header). Fallback ke email.

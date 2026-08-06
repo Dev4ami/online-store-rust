@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Bayar Pesanan #{{ order.number }} — Toko Online{% endblock %}
+
+{% block content %}
+<div class="order-box">
+    <h1>Pembayaran</h1>
+    <p class="order-meta">
+        Pesanan <strong>#{{ order.number }}</strong> &middot;
+        Referensi: <strong>{{ reference }}</strong>
+    </p>
+
+    <table class="cart-table">
+        <tbody>
+            <tr>
+                <td class="total-label">Jumlah yang harus dibayar</td>
+                <td class="grand-total">{{ order.total_display() }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="pay-simulasi">
+        <p class="pay-note">
+            Mode pengembangan (gateway dummy) — belum tersambung ke gateway asli.
+            Klik tombol di bawah untuk mensimulasikan notifikasi pembayaran lunas.
+        </p>
+
+        <form
+            hx-post="/webhook/payment"
+            hx-headers='{"X-Dummy-Signature": "{{ dummy_secret }}"}'
+            hx-swap="none"
+            hx-on::after-request="if(event.detail.successful){window.location.href='/order/{{ order.id }}'}">
+            <input type="hidden" name="order_id" value="{{ order.id }}">
+            <input type="hidden" name="reference" value="{{ reference }}">
+            <input type="hidden" name="status" value="paid">
+            <button type="submit" class="btn-primary">Tandai Sudah Bayar (simulasi)</button>
+        </form>
+    </div>
+
+    <div class="cart-actions">
+        <a href="/order/{{ order.id }}" class="btn-secondary">Kembali ke Pesanan</a>
+    </div>
+</div>
+{% endblock %}

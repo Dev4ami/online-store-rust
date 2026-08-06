@@ -19,6 +19,10 @@ pub struct Order {
     #[allow(dead_code)] // ditampilkan terpisah saat ongkir/pajak masuk
     pub subtotal: Decimal,
     pub total: Decimal,
+    #[allow(dead_code)] // disimpan untuk audit; ditampilkan saat butuh
+    pub payment_method: Option<String>,
+    pub payment_ref: Option<String>,
+    pub paid_at: Option<chrono::DateTime<chrono::Utc>>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -46,6 +50,17 @@ impl Order {
             "paid" => "Sudah Dibayar",
             "cancelled" => "Dibatalkan",
             _ => "—",
+        }
+    }
+    /// Masih menunggu pembayaran (untuk menampilkan tombol Bayar).
+    pub fn is_pending(&self) -> bool {
+        self.status == "pending"
+    }
+    /// Waktu lunas terformat, atau "—" bila belum dibayar.
+    pub fn paid_at_display(&self) -> String {
+        match self.paid_at {
+            Some(t) => t.format("%d-%m-%Y %H:%M UTC").to_string(),
+            None => "—".to_string(),
         }
     }
 }
@@ -143,6 +158,8 @@ impl Order {
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING id, number, user_id, email, customer_name, phone,
                       shipping_address, status, subtotal, total,
+                      payment_method, payment_ref,
+                      paid_at as "paid_at: chrono::DateTime<chrono::Utc>",
                       created_at as "created_at: chrono::DateTime<chrono::Utc>"
             "#,
             user_id,
@@ -203,6 +220,8 @@ impl Order {
             r#"
             SELECT id, number, user_id, email, customer_name, phone,
                    shipping_address, status, subtotal, total,
+                   payment_method, payment_ref,
+                   paid_at as "paid_at: chrono::DateTime<chrono::Utc>",
                    created_at as "created_at: chrono::DateTime<chrono::Utc>"
             FROM orders WHERE id = $1
             "#,
@@ -234,6 +253,8 @@ impl Order {
             r#"
             SELECT id, number, user_id, email, customer_name, phone,
                    shipping_address, status, subtotal, total,
+                   payment_method, payment_ref,
+                   paid_at as "paid_at: chrono::DateTime<chrono::Utc>",
                    created_at as "created_at: chrono::DateTime<chrono::Utc>"
             FROM orders WHERE user_id = $1
             ORDER BY created_at DESC
@@ -242,5 +263,31 @@ impl Order {
         )
         .fetch_all(pool)
         .await
+    }
+
+    /// Tandai order lunas. Idempoten: hanya berpengaruh saat status masih `pending`,
+    /// jadi webhook yang dikirim ulang tidak menimpa `paid_at`.
+    /// Balikin `true` bila baris berubah (transisi pending -> paid terjadi).
+    pub async fn mark_paid(
+        pool: &PgPool,
+        order_id: Uuid,
+        method: &str,
+        reference: &str,
+    ) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            r#"
+            UPDATE orders
+               SET status = 'paid', paid_at = now(),
+                   payment_method = $2, payment_ref = $3
+             WHERE id = $1 AND status = 'pending'
+            "#,
+            order_id,
+            method,
+            reference,
+        )
+        .execute(pool)
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
     }
 }

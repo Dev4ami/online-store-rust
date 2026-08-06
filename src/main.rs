@@ -5,8 +5,11 @@ mod db;
 mod error;
 mod handlers;
 mod models;
+mod payment;
 mod state;
 mod templates;
+
+use std::sync::Arc;
 
 use axum::Router;
 use axum::routing::{get, post};
@@ -18,6 +21,8 @@ use tower_sessions_sqlx_store::PostgresStore;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::config::Config;
+use crate::payment::PaymentGateway;
+use crate::payment::dummy::DummyGateway;
 use crate::state::AppState;
 
 #[tokio::main]
@@ -41,7 +46,15 @@ async fn main() -> anyhow::Result<()> {
         .with_secure(false) // set true di produksi (HTTPS)
         .with_expiry(Expiry::OnInactivity(time::Duration::days(30)));
 
-    let state = AppState { pool };
+    // Gateway pembayaran. Dummy untuk dev; ganti implementor saat gateway nyata dipilih.
+    let gateway: Arc<dyn PaymentGateway> =
+        Arc::new(DummyGateway::new(config.payment_dummy_secret.clone()));
+
+    let state = AppState {
+        pool,
+        gateway,
+        dummy_secret: config.payment_dummy_secret.clone(),
+    };
 
     let app = Router::new()
         .route("/", get(handlers::catalog::index))
@@ -57,6 +70,8 @@ async fn main() -> anyhow::Result<()> {
         .route("/checkout", get(handlers::order::checkout_form).post(handlers::order::checkout))
         .route("/order/{id}", get(handlers::order::detail))
         .route("/orders", get(handlers::order::list))
+        .route("/pay/{id}", get(handlers::payment::pay_page))
+        .route("/webhook/payment", post(handlers::payment::webhook))
         .nest_service("/static", ServeDir::new("static"))
         .layer(session_layer)
         .layer(CompressionLayer::new())

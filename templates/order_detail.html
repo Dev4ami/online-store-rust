@@ -9,6 +9,22 @@
         Nomor Pesanan: <strong>#{{ order.number }}</strong> &middot;
         Status: <span class="badge-status">{{ order.status_label() }}</span>
     </p>
+
+    {% if order.is_pending() %}
+    <div class="pay-cta">
+        <a href="/pay/{{ order.id }}" class="btn-primary">Bayar Sekarang</a>
+    </div>
+    {% else %}
+        {% if order.status == "paid" %}
+        <p class="order-meta paid-info">
+            Dibayar pada {{ order.paid_at_display() }}
+            {% match order.payment_ref %}
+                {% when Some(ref_) %} &middot; Ref: {{ ref_ }}
+                {% when None %}
+            {% endmatch %}
+        </p>
+        {% endif %}
+    {% endif %}
 </div>
 
 <div class="order-box">
