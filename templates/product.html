@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} — Toko Online{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb"><a href="/">Katalog</a> / {{ product.name }}</nav>
+
+<div class="detail">
+    <div class="detail-img">
+        {% match product.image_url %}
+            {% when Some(url) %}<img src="{{ url }}" alt="{{ product.name }}">
+            {% when None %}<div class="img-placeholder">Tidak ada gambar</div>
+        {% endmatch %}
+    </div>
+
+    <div class="detail-info">
+        <h1>{{ product.name }}</h1>
+        <p class="detail-price">{{ product.price_display() }}</p>
+
+        {% if product.stock > 0 %}
+        <p class="stock in-stock">Stok tersedia: {{ product.stock }}</p>
+        <button class="btn-primary" disabled>Tambah ke Keranjang (segera)</button>
+        {% else %}
+        <p class="stock out-stock">Stok habis</p>
+        {% endif %}
+
+        <div class="detail-desc">
+            <h3>Deskripsi</h3>
+            <p>{{ product.description }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

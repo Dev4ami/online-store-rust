@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Katalog — Toko Online{% endblock %}
+
+{% block content %}
+<h1>Katalog Produk</h1>
+
+{% if products.is_empty() %}
+<p class="empty">Belum ada produk.</p>
+{% else %}
+<div class="grid">
+    {% for p in products %}
+    <article class="card">
+        <a href="/product/{{ p.slug }}" class="card-link">
+            <div class="card-img">
+                {% match p.image_url %}
+                    {% when Some(url) %}<img src="{{ url }}" alt="{{ p.name }}">
+                    {% when None %}<div class="img-placeholder">Tidak ada gambar</div>
+                {% endmatch %}
+            </div>
+            <h2 class="card-title">{{ p.name }}</h2>
+            <p class="card-price">{{ p.price_display() }}</p>
+        </a>
+    </article>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

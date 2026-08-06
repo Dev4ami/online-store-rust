@@ -1,0 +1,17 @@
+# Rust build artifacts
+/target
+
+# Environment / secrets — JANGAN commit password DB
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# NOTE: Cargo.lock SENGAJA tidak di-ignore (project ini binary app → lock deps).
