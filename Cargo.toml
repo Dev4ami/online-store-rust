@@ -8,9 +8,10 @@ anyhow = "1.0.104"
 argon2 = "0.5.3"
 askama = "0.16.0"
 async-trait = "0.1.83"
-axum = "0.8.9"
+axum = { version = "0.8.9", features = ["multipart"] }
 chrono = { version = "0.4.45", default-features = false, features = ["serde", "clock"] }
 dotenvy = "0.15.7"
+image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "webp"] }
 rust_decimal = "1.42.1"
 serde = { version = "1.0.229", features = ["derive"] }
 sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "migrate", "rust_decimal", "chrono", "uuid"] }

@@ -134,7 +134,8 @@ pub struct AdminProductFormTemplate {
     pub description: String,
     pub price: String,
     pub stock: String,
-    pub image_url: String,
+    // Gambar produk saat ini (untuk preview saat edit); None saat tambah baru.
+    pub current_image: Option<String>,
     pub is_active: bool,
 }
 

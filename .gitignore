@@ -14,4 +14,8 @@
 Thumbs.db
 .DS_Store
 
+# Gambar produk yang diunggah — jangan commit (folder tetap ada via .gitkeep)
+static/uploads/*
+!static/uploads/.gitkeep
+
 # NOTE: Cargo.lock SENGAJA tidak di-ignore (project ini binary app → lock deps).

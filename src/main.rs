@@ -8,10 +8,12 @@ mod models;
 mod payment;
 mod state;
 mod templates;
+mod uploads;
 
 use std::sync::Arc;
 
 use axum::Router;
+use axum::extract::DefaultBodyLimit;
 use axum::routing::{get, post};
 use tower_http::compression::CompressionLayer;
 use tower_http::services::ServeDir;
@@ -85,14 +87,21 @@ async fn main() -> anyhow::Result<()> {
         .route("/admin", get(handlers::admin::dashboard))
         .route(
             "/admin/products",
-            get(handlers::admin::products).post(handlers::admin::product_create),
+            get(handlers::admin::products)
+                .post(handlers::admin::product_create)
+                // Foto bisa > 2 MB (default) sebelum dikompres; naikkan khusus route ini.
+                .layer(DefaultBodyLimit::max(8 * 1024 * 1024)),
         )
         .route("/admin/products/new", get(handlers::admin::product_new))
         .route(
             "/admin/products/{id}/edit",
             get(handlers::admin::product_edit),
         )
-        .route("/admin/products/{id}", post(handlers::admin::product_update))
+        .route(
+            "/admin/products/{id}",
+            post(handlers::admin::product_update)
+                .layer(DefaultBodyLimit::max(8 * 1024 * 1024)),
+        )
         .route(
             "/admin/products/{id}/delete",
             post(handlers::admin::product_delete),

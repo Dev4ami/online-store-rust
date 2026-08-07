@@ -5,11 +5,9 @@
 use std::str::FromStr;
 
 use askama::Template;
-use axum::Form;
-use axum::extract::{Path, State};
+use axum::extract::{Multipart, Path, State};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use rust_decimal::Decimal;
-use serde::Deserialize;
 use tower_sessions::Session;
 use uuid::Uuid;
 
@@ -19,6 +17,7 @@ use crate::models::order::Order;
 use crate::models::product::{NewProduct, Product};
 use crate::models::user::User;
 use crate::state::AppState;
+use crate::uploads;
 use crate::templates::{
     AdminOrderDetailTemplate, AdminOrdersTemplate, AdminProductFormTemplate, AdminProductsTemplate,
 };
@@ -81,26 +80,70 @@ pub async fn product_new(
         description: String::new(),
         price: String::new(),
         stock: String::new(),
-        image_url: String::new(),
+        current_image: None,
         is_active: true,
     }
     .render()?;
     Ok(Html(html))
 }
 
-/// Field form produk (mentah; price/stock diparse manual agar bisa balas pesan ramah).
-#[derive(Deserialize)]
+/// Field teks form produk (mentah; price/stock diparse manual agar bisa balas pesan ramah).
+/// Gambar tak di sini — datang sebagai bagian file terpisah dari multipart.
+#[derive(Default)]
 pub struct ProductForm {
     pub slug: String,
     pub name: String,
-    #[serde(default)]
     pub description: String,
     pub price: String,
     pub stock: String,
-    #[serde(default)]
-    pub image_url: String,
     // Checkbox: hadir ("on") bila dicentang, absen bila tidak.
     pub is_active: Option<String>,
+}
+
+/// Uraikan `multipart/form-data` form produk jadi (field teks, bytes gambar opsional).
+/// Field `image` kosong (0 byte / tak dipilih) → `None`.
+async fn parse_product_multipart(
+    mut multipart: Multipart,
+) -> Result<(ProductForm, Option<Vec<u8>>), AppError> {
+    let mut form = ProductForm::default();
+    let mut image: Option<Vec<u8>> = None;
+
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| AppError::Internal(format!("gagal baca form: {e}")))?
+    {
+        match field.name() {
+            Some("image") => {
+                let bytes = field
+                    .bytes()
+                    .await
+                    .map_err(|e| AppError::Internal(format!("gagal baca gambar: {e}")))?;
+                if !bytes.is_empty() {
+                    image = Some(bytes.to_vec());
+                }
+            }
+            Some(name) => {
+                let key = name.to_string();
+                let val = field
+                    .text()
+                    .await
+                    .map_err(|e| AppError::Internal(format!("gagal baca field {key}: {e}")))?;
+                match key.as_str() {
+                    "slug" => form.slug = val,
+                    "name" => form.name = val,
+                    "description" => form.description = val,
+                    "price" => form.price = val,
+                    "stock" => form.stock = val,
+                    "is_active" => form.is_active = Some(val),
+                    _ => {}
+                }
+            }
+            None => {}
+        }
+    }
+
+    Ok((form, image))
 }
 
 /// Hasil validasi form: NewProduct siap simpan, atau pesan error.
@@ -108,7 +151,6 @@ fn validate_product(form: &ProductForm) -> Result<NewProduct, String> {
     let slug = form.slug.trim().to_string();
     let name = form.name.trim().to_string();
     let description = form.description.trim().to_string();
-    let image_raw = form.image_url.trim().to_string();
 
     if name.is_empty() {
         return Err("Nama produk wajib diisi.".into());
@@ -138,30 +180,27 @@ fn validate_product(form: &ProductForm) -> Result<NewProduct, String> {
         return Err("Stok tidak boleh negatif.".into());
     }
 
-    let image_url = if image_raw.is_empty() {
-        None
-    } else {
-        Some(image_raw)
-    };
-
     Ok(NewProduct {
         slug,
         name,
         description,
         price,
         stock,
-        image_url,
+        // Diisi handler dari file unggahan (baru) atau gambar lama saat edit.
+        image_url: None,
         is_active: form.is_active.is_some(),
     })
 }
 
 /// Bangun ulang form dengan pesan error + input yang tadi diisi.
+/// `current_image`: gambar produk saat ini (untuk preview saat edit; None saat tambah).
 fn render_product_form(
     admin: &User,
     error: String,
     editing: bool,
     action_url: String,
     form: &ProductForm,
+    current_image: Option<String>,
 ) -> Result<Response, AppError> {
     let html = AdminProductFormTemplate {
         admin_name: admin_display_name(admin),
@@ -173,7 +212,7 @@ fn render_product_form(
         description: form.description.clone(),
         price: form.price.clone(),
         stock: form.stock.clone(),
-        image_url: form.image_url.clone(),
+        current_image,
         is_active: form.is_active.is_some(),
     }
     .render()?;
@@ -184,17 +223,26 @@ fn render_product_form(
 pub async fn product_create(
     State(state): State<AppState>,
     session: Session,
-    Form(form): Form<ProductForm>,
+    multipart: Multipart,
 ) -> Result<Response, AppError> {
     let admin = require_admin(&session, &state).await?;
     let action = "/admin/products".to_string();
+    let (form, image) = parse_product_multipart(multipart).await?;
 
-    let new = match validate_product(&form) {
+    let mut new = match validate_product(&form) {
         Ok(n) => n,
-        Err(msg) => return render_product_form(&admin, msg, false, action, &form),
+        Err(msg) => return render_product_form(&admin, msg, false, action, &form, None),
     };
     if Product::slug_taken(&state.pool, &new.slug, None).await? {
-        return render_product_form(&admin, "Slug sudah dipakai produk lain.".into(), false, action, &form);
+        return render_product_form(&admin, "Slug sudah dipakai produk lain.".into(), false, action, &form, None);
+    }
+
+    // Simpan gambar bila diunggah; kegagalan → form ramah, produk tak dibuat.
+    if let Some(bytes) = image {
+        match uploads::save_image(bytes).await {
+            Ok(path) => new.image_url = Some(path),
+            Err(msg) => return render_product_form(&admin, msg, false, action, &form, None),
+        }
     }
 
     Product::create(&state.pool, &new).await?;
@@ -221,7 +269,7 @@ pub async fn product_edit(
         description: p.description,
         price: p.price.to_string(),
         stock: p.stock.to_string(),
-        image_url: p.image_url.unwrap_or_default(),
+        current_image: p.image_url,
         is_active: p.is_active,
     }
     .render()?;
@@ -233,22 +281,55 @@ pub async fn product_update(
     State(state): State<AppState>,
     session: Session,
     Path(id): Path<Uuid>,
-    Form(form): Form<ProductForm>,
+    multipart: Multipart,
 ) -> Result<Response, AppError> {
     let admin = require_admin(&session, &state).await?;
     let action = format!("/admin/products/{id}");
+    let (form, image) = parse_product_multipart(multipart).await?;
 
-    let new = match validate_product(&form) {
+    // Gambar produk saat ini (untuk dipertahankan bila tak ada unggahan baru,
+    // dan untuk preview di form saat validasi gagal).
+    let existing = Product::by_id_any(&state.pool, id)
+        .await?
+        .ok_or(AppError::NotFound)?;
+    let old_image = existing.image_url.clone();
+
+    let mut new = match validate_product(&form) {
         Ok(n) => n,
-        Err(msg) => return render_product_form(&admin, msg, true, action, &form),
+        Err(msg) => {
+            return render_product_form(&admin, msg, true, action, &form, old_image);
+        }
     };
     if Product::slug_taken(&state.pool, &new.slug, Some(id)).await? {
-        return render_product_form(&admin, "Slug sudah dipakai produk lain.".into(), true, action, &form);
+        return render_product_form(
+            &admin, "Slug sudah dipakai produk lain.".into(), true, action, &form, old_image,
+        );
+    }
+
+    // Ada unggahan baru → simpan lalu tandai gambar lama untuk dihapus.
+    // Tak ada unggahan → pertahankan gambar lama (jangan kosongkan).
+    let mut replaced: Option<String> = None;
+    if let Some(bytes) = image {
+        match uploads::save_image(bytes).await {
+            Ok(path) => {
+                new.image_url = Some(path);
+                replaced = old_image.clone();
+            }
+            Err(msg) => {
+                return render_product_form(&admin, msg, true, action, &form, old_image);
+            }
+        }
+    } else {
+        new.image_url = old_image;
     }
 
     let updated = Product::update(&state.pool, id, &new).await?;
     if !updated {
         return Err(AppError::NotFound);
+    }
+    // Hapus file lama hanya setelah update DB sukses.
+    if let Some(old) = replaced {
+        uploads::delete_image(&old);
     }
     Ok(Redirect::to("/admin/products").into_response())
 }
@@ -260,7 +341,16 @@ pub async fn product_delete(
     Path(id): Path<Uuid>,
 ) -> Result<Response, AppError> {
     require_admin(&session, &state).await?;
-    Product::delete(&state.pool, id).await?;
+    // Catat path gambar sebelum hapus baris agar bisa bersihkan file yatim.
+    let image = Product::by_id_any(&state.pool, id)
+        .await?
+        .and_then(|p| p.image_url);
+    let deleted = Product::delete(&state.pool, id).await?;
+    if deleted {
+        if let Some(url) = image {
+            uploads::delete_image(&url);
+        }
+    }
     Ok(Redirect::to("/admin/products").into_response())
 }
 

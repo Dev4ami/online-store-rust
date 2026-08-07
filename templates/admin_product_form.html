@@ -11,7 +11,7 @@
         {% when None %}
     {% endmatch %}
 
-    <form action="{{ action_url }}" method="post" class="admin-form">
+    <form action="{{ action_url }}" method="post" class="admin-form" enctype="multipart/form-data">
         <label>
             Nama
             <input type="text" name="name" value="{{ name }}" required>
@@ -35,8 +35,14 @@
             </label>
         </div>
         <label>
-            URL Gambar (opsional)
-            <input type="text" name="image_url" value="{{ image_url }}">
+            Gambar produk
+            {% match current_image %}
+                {% when Some(url) %}
+                <img src="{{ url }}" alt="Gambar saat ini" class="form-image-preview">
+                <span class="field-hint">Biarkan kosong untuk mempertahankan gambar ini.</span>
+                {% when None %}
+            {% endmatch %}
+            <input type="file" name="image" accept="image/*">
         </label>
         <label class="checkbox-label">
             <input type="checkbox" name="is_active" {% if is_active %}checked{% endif %}>

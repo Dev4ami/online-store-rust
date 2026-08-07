@@ -216,6 +216,9 @@ a.btn-primary:hover { text-decoration: none; }
 .admin-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .admin-form .checkbox-label { flex-direction: row; align-items: center; gap: .5rem; color: var(--ink); }
 .admin-form .checkbox-label input { width: auto; }
+.admin-form input[type="file"] { padding: .4rem 0; border: none; color: var(--ink); }
+.form-image-preview { max-width: 160px; max-height: 160px; border-radius: 6px; border: 1px solid var(--border); object-fit: cover; }
+.field-hint { font-size: .8rem; color: var(--muted); }
 
 /* Aksi status di detail order admin */
 .admin-order-actions { display: flex; gap: .75rem; margin: 1rem 0; }
