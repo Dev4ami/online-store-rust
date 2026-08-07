@@ -1,11 +1,28 @@
 //! Struct template Askama (di-render compile-time).
 
+use std::sync::OnceLock;
+
 use askama::Template;
 use rust_decimal::Decimal;
 
 use crate::cart::CartLine;
 use crate::models::order::{Order, OrderItem};
 use crate::models::product::Product;
+
+/// Nama toko dari env, di-set sekali saat startup. Dipanggil langsung dari
+/// template (`{{ store_name() }}`) untuk brand, footer, dan judul tab —
+/// tanpa perlu field di tiap struct template.
+static STORE_NAME: OnceLock<String> = OnceLock::new();
+
+/// Set nama toko (dipanggil di `main` setelah baca config). Idempoten.
+pub fn set_store_name(name: String) {
+    let _ = STORE_NAME.set(name);
+}
+
+/// Nama toko aktif; fallback "Toko Online" bila belum di-set.
+pub fn store_name() -> &'static str {
+    STORE_NAME.get().map(String::as_str).unwrap_or("Toko Online")
+}
 
 /// Satu tombol di nav pagination. `num == 0` menandai elipsis "…".
 /// `current` = halaman yang sedang dibuka (precompute agar template tak perlu

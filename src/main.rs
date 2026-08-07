@@ -39,6 +39,8 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let config = Config::from_env()?;
+    // Nama toko untuk brand/title (dipakai template via templates::store_name()).
+    templates::set_store_name(config.store_name.clone());
     tracing::info!("menghubungkan ke database & menjalankan migrasi...");
     let pool = db::connect_and_migrate(&config.database_url).await?;
 

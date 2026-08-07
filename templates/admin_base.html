@@ -3,12 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Admin — Toko Online{% endblock %}</title>
+    <title>{% block title %}Admin — {{ crate::templates::store_name() }}{% endblock %}</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <header class="site-header admin-header">
-        <a class="brand" href="/admin">Admin&nbsp;Toko</a>
+        <a class="brand" href="/admin">Admin · {{ crate::templates::store_name() }}</a>
         <nav>
             <a href="/admin/products">Produk</a>
             <a href="/admin/orders">Pesanan</a>
@@ -25,7 +25,7 @@
     </main>
 
     <footer class="site-footer">
-        <p>&copy; Toko Online — panel admin.</p>
+        <p>&copy; {{ crate::templates::store_name() }} — panel admin.</p>
     </footer>
 </body>
 </html>

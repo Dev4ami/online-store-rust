@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ product.name }} — Toko Online{% endblock %}
+{% block title %}{{ product.name }} — {{ crate::templates::store_name() }}{% endblock %}
 
 {% block content %}
 <nav class="breadcrumb"><a href="/">Katalog</a> / {{ product.name }}</nav>

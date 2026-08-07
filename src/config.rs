@@ -11,6 +11,8 @@ pub struct Config {
     pub payment_dummy_secret: String,
     /// Email akun yang otomatis dipromosikan jadi admin saat startup (opsional).
     pub admin_email: Option<String>,
+    /// Nama toko yang tampil di brand header, footer, dan judul tab. Default "Toko Online".
+    pub store_name: String,
 }
 
 impl Config {
@@ -26,6 +28,11 @@ impl Config {
             .ok()
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty());
-        Ok(Self { database_url, bind_addr, payment_dummy_secret, admin_email })
+        let store_name = env::var("STORE_NAME")
+            .ok()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "Toko Online".to_string());
+        Ok(Self { database_url, bind_addr, payment_dummy_secret, admin_email, store_name })
     }
 }

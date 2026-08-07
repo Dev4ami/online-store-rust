@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Bayar Pesanan #{{ order.number }} — Toko Online{% endblock %}
+{% block title %}Bayar Pesanan #{{ order.number }} — {{ crate::templates::store_name() }}{% endblock %}
 
 {% block content %}
 <div class="order-box">
