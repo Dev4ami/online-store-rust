@@ -7,21 +7,21 @@
 
 <form class="catalog-toolbar"
       hx-get="/"
-      hx-target="#product-grid"
+      hx-target="#catalog-results"
       hx-swap="outerHTML"
       hx-push-url="true"
       hx-trigger="input changed delay:400ms, change, submit">
-    <input type="search" name="q" value="{{ q }}" placeholder="Cari produk…"
+    <input type="search" name="q" value="{{ pg.q }}" placeholder="Cari produk…"
            class="toolbar-search" autocomplete="off">
-    <input type="number" name="min" value="{{ min }}" placeholder="Harga min"
+    <input type="number" name="min" value="{{ pg.min }}" placeholder="Harga min"
            min="0" step="1000" class="toolbar-price">
-    <input type="number" name="max" value="{{ max }}" placeholder="Harga maks"
+    <input type="number" name="max" value="{{ pg.max }}" placeholder="Harga maks"
            min="0" step="1000" class="toolbar-price">
     <select name="sort" class="toolbar-sort">
-        <option value="newest"{% if sort == "newest" %} selected{% endif %}>Terbaru</option>
-        <option value="price_asc"{% if sort == "price_asc" %} selected{% endif %}>Harga terendah</option>
-        <option value="price_desc"{% if sort == "price_desc" %} selected{% endif %}>Harga tertinggi</option>
-        <option value="name"{% if sort == "name" %} selected{% endif %}>Nama (A–Z)</option>
+        <option value="newest"{% if pg.sort == "newest" %} selected{% endif %}>Terbaru</option>
+        <option value="price_asc"{% if pg.sort == "price_asc" %} selected{% endif %}>Harga terendah</option>
+        <option value="price_desc"{% if pg.sort == "price_desc" %} selected{% endif %}>Harga tertinggi</option>
+        <option value="name"{% if pg.sort == "name" %} selected{% endif %}>Nama (A–Z)</option>
     </select>
     <noscript><button type="submit" class="btn">Cari</button></noscript>
 </form>

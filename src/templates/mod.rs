@@ -7,6 +7,47 @@ use crate::cart::CartLine;
 use crate::models::order::{Order, OrderItem};
 use crate::models::product::Product;
 
+/// Satu tombol di nav pagination. `num == 0` menandai elipsis "…".
+/// `current` = halaman yang sedang dibuka (precompute agar template tak perlu
+/// membandingkan `&i64`, yang tak didukung Askama).
+pub struct PageBtn {
+    pub num: i64,
+    pub current: bool,
+}
+
+/// Konteks katalog (filter + paginasi) yang dibagikan halaman penuh & partial grid.
+/// `q/min/max/sort` dipakai untuk isi ulang toolbar dan membangun href pagination.
+pub struct Pagination {
+    pub q: String,
+    pub min: String,
+    pub max: String,
+    pub sort: String,
+    pub page: i64,
+    pub total_pages: i64,
+    pub pages: Vec<PageBtn>,
+    pub has_prev: bool,
+    pub has_next: bool,
+}
+
+/// Bangun jendela tombol halaman: selalu tampilkan 1, terakhir, dan current±2;
+/// sisipkan elipsis (`num=0`) saat ada lompatan. Contoh (current=6, total=20):
+/// [1, …, 4, 5, 6, 7, 8, …, 20].
+pub fn page_window(current: i64, total: i64) -> Vec<PageBtn> {
+    let mut out = Vec::new();
+    let mut prev = 0i64;
+    for n in 1..=total {
+        let keep = n == 1 || n == total || (n - current).abs() <= 2;
+        if keep {
+            if prev != 0 && n - prev > 1 {
+                out.push(PageBtn { num: 0, current: false }); // lompatan → elipsis
+            }
+            out.push(PageBtn { num: n, current: n == current });
+            prev = n;
+        }
+    }
+    out
+}
+
 #[derive(Template)]
 #[template(path = "index.html")]
 pub struct IndexTemplate {
@@ -14,18 +55,15 @@ pub struct IndexTemplate {
     pub cart_count: i32,
     pub user_name: Option<String>,
     pub is_admin: bool,
-    // Echo nilai toolbar agar terisi ulang saat full-load (mis. buka URL langsung).
-    pub q: String,
-    pub min: String,
-    pub max: String,
-    pub sort: String,
+    pub pg: Pagination,
 }
 
-/// Partial grid produk (untuk swap HTMX saat pencarian/filter live).
+/// Partial grid produk + nav pagination (untuk swap HTMX saat filter/pindah halaman).
 #[derive(Template)]
 #[template(path = "catalog_grid.html")]
 pub struct CatalogGridTemplate {
     pub products: Vec<Product>,
+    pub pg: Pagination,
 }
 
 #[derive(Template)]

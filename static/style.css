@@ -81,6 +81,15 @@ a:hover { text-decoration: underline; }
 .catalog-toolbar .toolbar-sort { margin-left: auto; }
 .grid-empty { margin-top: 1.5rem; }
 
+/* Pagination katalog */
+.pagination { display: flex; flex-wrap: wrap; gap: .35rem; justify-content: center; align-items: center; margin: 2rem 0 1rem; }
+.pagination a, .pagination span { min-width: 2.2rem; padding: .45rem .6rem; text-align: center; border: 1px solid var(--border); border-radius: 6px; font-size: .9rem; }
+.pagination a { color: var(--ink); background: var(--card); }
+.pagination a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+.pagination .active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+.pagination .disabled { color: var(--muted); background: #f8f9fa; cursor: default; }
+.pagination .gap { border: none; background: none; color: var(--muted); min-width: 1rem; padding: .45rem .2rem; }
+
 .empty { color: var(--muted); margin-top: 2rem; }
 
 /* Detail produk */

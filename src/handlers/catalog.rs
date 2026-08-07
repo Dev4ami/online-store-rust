@@ -13,9 +13,9 @@ use tower_sessions::Session;
 use crate::auth;
 use crate::cart::Cart;
 use crate::error::AppError;
-use crate::models::product::{Product, ProductSort};
+use crate::models::product::{PER_PAGE, Product, ProductSort};
 use crate::state::AppState;
-use crate::templates::{CatalogGridTemplate, IndexTemplate, ProductTemplate};
+use crate::templates::{CatalogGridTemplate, IndexTemplate, Pagination, ProductTemplate, page_window};
 
 /// Parameter pencarian/filter katalog dari query string.
 #[derive(Debug, Default, Deserialize)]
@@ -28,6 +28,8 @@ pub struct CatalogQuery {
     pub max: Option<String>,
     #[serde(default)]
     pub sort: Option<String>,
+    #[serde(default)]
+    pub page: Option<String>,
 }
 
 /// Parse string harga → Decimal; kosong/invalid → None.
@@ -57,16 +59,45 @@ pub async fn index(
         .as_deref()
         .map(ProductSort::from_query)
         .unwrap_or(ProductSort::Newest);
+    // Halaman diminta (minimal 1); nilai jorok → 1.
+    let req_page = params
+        .page
+        .as_deref()
+        .and_then(|s| s.trim().parse::<i64>().ok())
+        .unwrap_or(1)
+        .max(1);
 
-    let products = Product::search(&state.pool, q_opt, min, max, sort).await?;
+    // Ambil dulu untuk tahu total; clamp page bila melewati batas, lalu ambil halaman benar.
+    let mut offset = (req_page - 1) * PER_PAGE;
+    let mut result = Product::search(&state.pool, q_opt, min, max, sort, PER_PAGE, offset).await?;
+    let total_pages = ((result.total + PER_PAGE - 1) / PER_PAGE).max(1);
+    let mut page = req_page;
+    if page > total_pages {
+        page = total_pages;
+        offset = (page - 1) * PER_PAGE;
+        result = Product::search(&state.pool, q_opt, min, max, sort, PER_PAGE, offset).await?;
+    }
 
-    // Request HTMX → cukup kirim grid untuk di-swap ke #product-grid.
+    let pg = Pagination {
+        q: q_opt.unwrap_or("").to_string(),
+        min: params.min.as_deref().map(str::trim).unwrap_or("").to_string(),
+        max: params.max.as_deref().map(str::trim).unwrap_or("").to_string(),
+        sort: sort.as_query().to_string(),
+        page,
+        total_pages,
+        pages: page_window(page, total_pages),
+        has_prev: page > 1,
+        has_next: page < total_pages,
+    };
+    let products = result.items;
+
+    // Request HTMX → cukup kirim grid + nav untuk di-swap ke #catalog-results.
     if headers.contains_key("HX-Request") {
-        let html = CatalogGridTemplate { products }.render()?;
+        let html = CatalogGridTemplate { products, pg }.render()?;
         return Ok(Html(html));
     }
 
-    // Full-load → halaman lengkap + echo nilai toolbar agar tetap terisi.
+    // Full-load → halaman lengkap.
     let cart_count = Cart::load(&session).await.total_qty();
     let (user_name, is_admin) = auth::current_user_header(&session, &state.pool).await;
     let html = IndexTemplate {
@@ -74,10 +105,7 @@ pub async fn index(
         cart_count,
         user_name,
         is_admin,
-        q: q_opt.unwrap_or("").to_string(),
-        min: params.min.map(|s| s.trim().to_string()).unwrap_or_default(),
-        max: params.max.map(|s| s.trim().to_string()).unwrap_or_default(),
-        sort: sort.as_query().to_string(),
+        pg,
     }
     .render()?;
     Ok(Html(html))

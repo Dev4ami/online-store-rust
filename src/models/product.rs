@@ -58,31 +58,62 @@ pub struct NewProduct {
     pub is_active: bool,
 }
 
+/// Jumlah produk per halaman katalog.
+pub const PER_PAGE: i64 = 24;
+
+/// Satu halaman hasil katalog: produk halaman ini + total (untuk hitung jumlah halaman).
+pub struct ProductPage {
+    pub items: Vec<Product>,
+    pub total: i64,
+}
+
 impl Product {
     /// Harga terformat Rupiah, mis. "Rp1.250.000".
     pub fn price_display(&self) -> String {
         format_rupiah(self.price)
     }
 
-    /// Cari & filter produk aktif untuk katalog publik.
+    /// Cari, filter, urutkan, dan paginasi produk aktif untuk katalog publik.
     /// - `q`: cocok pada nama (case-insensitive); metachar LIKE di-escape.
     /// - `min`/`max`: batas harga inklusif.
-    /// - `sort`: urutan hasil.
+    /// - `sort`: urutan hasil (di SQL, agar konsisten lintas halaman).
+    /// - `limit`/`offset`: jendela halaman.
     ///
-    /// Satu `query_as!` (cek-compile) menerapkan filter opsional lewat pola
-    /// `($n IS NULL OR ...)`; pengurutan non-default dilakukan in-memory karena
-    /// struct `Product` tak memuat `created_at`.
+    /// Dua query dengan `WHERE` identik: `COUNT(*)` untuk total (hitung jumlah
+    /// halaman) + `SELECT ... LIMIT/OFFSET` untuk isi halaman. Pengurutan
+    /// dilakukan di SQL via `ORDER BY CASE` — WAJIB sebelum `LIMIT` agar tak
+    /// hanya mengurutkan potongan halaman.
     pub async fn search(
         pool: &PgPool,
         q: Option<&str>,
         min: Option<Decimal>,
         max: Option<Decimal>,
         sort: ProductSort,
-    ) -> Result<Vec<Product>, sqlx::Error> {
+        limit: i64,
+        offset: i64,
+    ) -> Result<ProductPage, sqlx::Error> {
         // Escape metachar LIKE agar user tak bisa menyisipkan wildcard.
         let pattern = q.map(|s| format!("%{}%", escape_like(s)));
+        let sort_key = sort.as_query();
 
-        let mut products = sqlx::query_as!(
+        // Total baris yang cocok (untuk pagination). WHERE sama persis dengan query halaman.
+        let total = sqlx::query_scalar!(
+            r#"
+            SELECT COUNT(*) FROM products
+            WHERE is_active = TRUE
+              AND ($1::text IS NULL OR name ILIKE $1 ESCAPE '\')
+              AND ($2::numeric IS NULL OR price >= $2)
+              AND ($3::numeric IS NULL OR price <= $3)
+            "#,
+            pattern,
+            min,
+            max,
+        )
+        .fetch_one(pool)
+        .await?
+        .unwrap_or(0);
+
+        let items = sqlx::query_as!(
             Product,
             r#"
             SELECT id, slug, name, description, price, stock, image_url, is_active
@@ -91,26 +122,24 @@ impl Product {
               AND ($1::text IS NULL OR name ILIKE $1 ESCAPE '\')
               AND ($2::numeric IS NULL OR price >= $2)
               AND ($3::numeric IS NULL OR price <= $3)
-            ORDER BY created_at DESC
+            ORDER BY
+              CASE WHEN $4 = 'price_asc'  THEN price END ASC,
+              CASE WHEN $4 = 'price_desc' THEN price END DESC,
+              CASE WHEN $4 = 'name'       THEN lower(name) END ASC,
+              created_at DESC
+            LIMIT $5 OFFSET $6
             "#,
             pattern,
             min,
             max,
+            sort_key,
+            limit,
+            offset,
         )
         .fetch_all(pool)
         .await?;
 
-        // Dasar dari SQL sudah "terbaru dulu"; tinggal urutkan ulang bila perlu.
-        match sort {
-            ProductSort::Newest => {}
-            ProductSort::PriceAsc => products.sort_by(|a, b| a.price.cmp(&b.price)),
-            ProductSort::PriceDesc => products.sort_by(|a, b| b.price.cmp(&a.price)),
-            ProductSort::Name => {
-                products.sort_by_key(|p| p.name.to_lowercase());
-            }
-        }
-
-        Ok(products)
+        Ok(ProductPage { items, total })
     }
 
     /// Ambil satu produk aktif berdasarkan slug.
