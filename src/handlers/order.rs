@@ -46,11 +46,12 @@ pub async fn checkout_form(
             name = u.name;
         }
     }
-    let user_name = auth::current_user_name(&session, &state.pool).await;
+    let (user_name, is_admin) = auth::current_user_header(&session, &state.pool).await;
 
     let html = CheckoutTemplate {
         cart_count: cart.total_qty(),
         user_name,
+        is_admin,
         lines,
         grand_total: Cart::grand_total_display(total),
         error: None,
@@ -83,13 +84,14 @@ pub async fn checkout(
     let address = form.shipping_address.trim().to_string();
     let cart_count = cart.total_qty();
     let grand_total = Cart::grand_total_display(total);
-    let user_name = auth::current_user_name(&session, &state.pool).await;
+    let (user_name, is_admin) = auth::current_user_header(&session, &state.pool).await;
 
     // Bangun ulang halaman checkout dengan pesan error (ringkasan cart tetap tampil).
     let render_err = |msg: String| -> Result<Response, AppError> {
         let html = CheckoutTemplate {
             cart_count,
             user_name: user_name.clone(),
+            is_admin,
             lines: lines.clone(),
             grand_total: grand_total.clone(),
             error: Some(msg),
@@ -155,11 +157,12 @@ pub async fn detail(
 
     let items = Order::items(&state.pool, id).await?;
     let cart_count = Cart::load(&session).await.total_qty();
-    let user_name = auth::current_user_name(&session, &state.pool).await;
+    let (user_name, is_admin) = auth::current_user_header(&session, &state.pool).await;
 
     let html = OrderDetailTemplate {
         cart_count,
         user_name,
+        is_admin,
         order,
         items,
     }
@@ -178,11 +181,12 @@ pub async fn list(
 
     let orders = Order::list_for_user(&state.pool, uid).await?;
     let cart_count = Cart::load(&session).await.total_qty();
-    let user_name = auth::current_user_name(&session, &state.pool).await;
+    let (user_name, is_admin) = auth::current_user_header(&session, &state.pool).await;
 
     let html = OrdersTemplate {
         cart_count,
         user_name,
+        is_admin,
         orders,
     }
     .render()?;

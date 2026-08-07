@@ -44,13 +44,14 @@ pub async fn view(
     let (lines, total) = cart.detailed(&state.pool).await?;
     // Simpan lagi kalau ada item ter-prune.
     cart.save(&session).await.map_err(|_| AppError::NotFound)?;
-    let user_name = crate::auth::current_user_name(&session, &state.pool).await;
+    let (user_name, is_admin) = crate::auth::current_user_header(&session, &state.pool).await;
 
     let html = CartTemplate {
         cart_count: cart.total_qty(),
         grand_total: Cart::grand_total_display(total),
         lines,
         user_name,
+        is_admin,
     }
     .render()?;
     Ok(Html(html))

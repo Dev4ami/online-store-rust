@@ -79,16 +79,23 @@ pub async fn current_admin(
     user.is_admin().then_some(user)
 }
 
-/// Ambil nama tampilan user yang login (untuk header). Fallback ke email.
-pub async fn current_user_name(
+/// Info user untuk header tiap halaman: nama tampilan (fallback email) + apakah admin.
+/// Satu query DB; `(None, false)` bila belum login. Dipakai semua handler yang
+/// merender `base.html` agar link "Admin" bisa muncul kondisional.
+pub async fn current_user_header(
     session: &Session,
     pool: &sqlx::PgPool,
-) -> Option<String> {
-    let id = current_user_id(session).await?;
-    let user = crate::models::user::User::by_id(pool, id).await.ok().flatten()?;
-    if user.name.is_empty() {
-        Some(user.email)
+) -> (Option<String>, bool) {
+    let Some(id) = current_user_id(session).await else {
+        return (None, false);
+    };
+    let Some(user) = crate::models::user::User::by_id(pool, id).await.ok().flatten() else {
+        return (None, false);
+    };
+    let name = if user.name.is_empty() {
+        user.email.clone()
     } else {
-        Some(user.name)
-    }
+        user.name.clone()
+    };
+    (Some(name), user.is_admin())
 }

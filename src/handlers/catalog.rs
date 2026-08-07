@@ -68,11 +68,12 @@ pub async fn index(
 
     // Full-load → halaman lengkap + echo nilai toolbar agar tetap terisi.
     let cart_count = Cart::load(&session).await.total_qty();
-    let user_name = auth::current_user_name(&session, &state.pool).await;
+    let (user_name, is_admin) = auth::current_user_header(&session, &state.pool).await;
     let html = IndexTemplate {
         products,
         cart_count,
         user_name,
+        is_admin,
         q: q_opt.unwrap_or("").to_string(),
         min: params.min.map(|s| s.trim().to_string()).unwrap_or_default(),
         max: params.max.map(|s| s.trim().to_string()).unwrap_or_default(),
@@ -89,11 +90,11 @@ pub async fn detail(
     Path(slug): Path<String>,
 ) -> Result<Html<String>, AppError> {
     let cart_count = Cart::load(&session).await.total_qty();
-    let user_name = auth::current_user_name(&session, &state.pool).await;
+    let (user_name, is_admin) = auth::current_user_header(&session, &state.pool).await;
     let product = Product::by_slug(&state.pool, &slug)
         .await?
         .ok_or(AppError::NotFound)?;
-    let html = ProductTemplate { product, cart_count, user_name }.render()?;
+    let html = ProductTemplate { product, cart_count, user_name, is_admin }.render()?;
     Ok(Html(html))
 }
 

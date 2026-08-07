@@ -39,10 +39,11 @@ pub async fn register_form(
     session: Session,
 ) -> Result<Html<String>, AppError> {
     let cart_count = Cart::load(&session).await.total_qty();
-    let user_name = auth::current_user_name(&session, &state.pool).await;
+    let (user_name, is_admin) = auth::current_user_header(&session, &state.pool).await;
     let html = RegisterTemplate {
         cart_count,
         user_name,
+        is_admin,
         error: None,
         email: String::new(),
         name: String::new(),
@@ -65,6 +66,7 @@ pub async fn register(
         let html = RegisterTemplate {
             cart_count,
             user_name: None,
+            is_admin: false,
             error: Some(msg.to_string()),
             email: email.to_string(),
             name: form.name.clone(),
@@ -100,10 +102,11 @@ pub async fn login_form(
     session: Session,
 ) -> Result<Html<String>, AppError> {
     let cart_count = Cart::load(&session).await.total_qty();
-    let user_name = auth::current_user_name(&session, &state.pool).await;
+    let (user_name, is_admin) = auth::current_user_header(&session, &state.pool).await;
     let html = LoginTemplate {
         cart_count,
         user_name,
+        is_admin,
         error: None,
         email: String::new(),
     }
@@ -124,6 +127,7 @@ pub async fn login(
         let html = LoginTemplate {
             cart_count,
             user_name: None,
+            is_admin: false,
             error: Some(msg.to_string()),
             email: email.to_string(),
         }

@@ -52,11 +52,12 @@ pub async fn pay_page(
         .map_err(|e| AppError::Internal(format!("gagal membuat pembayaran: {e}")))?;
 
     let cart_count = Cart::load(&session).await.total_qty();
-    let user_name = auth::current_user_name(&session, &state.pool).await;
+    let (user_name, is_admin) = auth::current_user_header(&session, &state.pool).await;
 
     let html = PayTemplate {
         cart_count,
         user_name,
+        is_admin,
         order,
         reference: instruction.reference,
         // Disodorkan ke form simulasi dummy agar bisa mengirim webhook bertanda tangan.

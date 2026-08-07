@@ -13,6 +13,7 @@ pub struct IndexTemplate {
     pub products: Vec<Product>,
     pub cart_count: i32,
     pub user_name: Option<String>,
+    pub is_admin: bool,
     // Echo nilai toolbar agar terisi ulang saat full-load (mis. buka URL langsung).
     pub q: String,
     pub min: String,
@@ -33,6 +34,7 @@ pub struct ProductTemplate {
     pub product: Product,
     pub cart_count: i32,
     pub user_name: Option<String>,
+    pub is_admin: bool,
 }
 
 /// Halaman keranjang penuh.
@@ -43,6 +45,7 @@ pub struct CartTemplate {
     pub grand_total: String,
     pub cart_count: i32,
     pub user_name: Option<String>,
+    pub is_admin: bool,
 }
 
 /// Halaman registrasi.
@@ -51,6 +54,7 @@ pub struct CartTemplate {
 pub struct RegisterTemplate {
     pub cart_count: i32,
     pub user_name: Option<String>,
+    pub is_admin: bool,
     pub error: Option<String>,
     pub email: String,
     pub name: String,
@@ -62,6 +66,7 @@ pub struct RegisterTemplate {
 pub struct LoginTemplate {
     pub cart_count: i32,
     pub user_name: Option<String>,
+    pub is_admin: bool,
     pub error: Option<String>,
     pub email: String,
 }
@@ -72,6 +77,7 @@ pub struct LoginTemplate {
 pub struct CheckoutTemplate {
     pub cart_count: i32,
     pub user_name: Option<String>,
+    pub is_admin: bool,
     pub lines: Vec<CartLine>,
     pub grand_total: String,
     pub error: Option<String>,
@@ -87,6 +93,7 @@ pub struct CheckoutTemplate {
 pub struct OrderDetailTemplate {
     pub cart_count: i32,
     pub user_name: Option<String>,
+    pub is_admin: bool,
     pub order: Order,
     pub items: Vec<OrderItem>,
 }
@@ -97,6 +104,7 @@ pub struct OrderDetailTemplate {
 pub struct OrdersTemplate {
     pub cart_count: i32,
     pub user_name: Option<String>,
+    pub is_admin: bool,
     pub orders: Vec<Order>,
 }
 
@@ -106,6 +114,7 @@ pub struct OrdersTemplate {
 pub struct PayTemplate {
     pub cart_count: i32,
     pub user_name: Option<String>,
+    pub is_admin: bool,
     pub order: Order,
     pub reference: String,
     pub dummy_secret: String,
