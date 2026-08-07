@@ -93,4 +93,4 @@ Sebelum deploy, wajib disesuaikan:
 
 ## Lisensi
 
-Belum ditentukan.
+[MIT](LICENSE) © 2026 Dev4ami
