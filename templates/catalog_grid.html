@@ -1,0 +1,23 @@
+{# Partial grid produk — dipakai full-load (via include) & swap HTMX. #}
+{% if products.is_empty() %}
+<div id="product-grid" class="grid-empty">
+    <p class="empty">Tidak ada produk cocok.</p>
+</div>
+{% else %}
+<div id="product-grid" class="grid">
+    {% for p in products %}
+    <article class="card">
+        <a href="/product/{{ p.slug }}" class="card-link">
+            <div class="card-img">
+                {% match p.image_url %}
+                    {% when Some(url) %}<img src="{{ url }}" alt="{{ p.name }}">
+                    {% when None %}<div class="img-placeholder">Tidak ada gambar</div>
+                {% endmatch %}
+            </div>
+            <h2 class="card-title">{{ p.name }}</h2>
+            <p class="card-price">{{ p.price_display() }}</p>
+        </a>
+    </article>
+    {% endfor %}
+</div>
+{% endif %}

@@ -5,24 +5,26 @@
 {% block content %}
 <h1>Katalog Produk</h1>
 
-{% if products.is_empty() %}
-<p class="empty">Belum ada produk.</p>
-{% else %}
-<div class="grid">
-    {% for p in products %}
-    <article class="card">
-        <a href="/product/{{ p.slug }}" class="card-link">
-            <div class="card-img">
-                {% match p.image_url %}
-                    {% when Some(url) %}<img src="{{ url }}" alt="{{ p.name }}">
-                    {% when None %}<div class="img-placeholder">Tidak ada gambar</div>
-                {% endmatch %}
-            </div>
-            <h2 class="card-title">{{ p.name }}</h2>
-            <p class="card-price">{{ p.price_display() }}</p>
-        </a>
-    </article>
-    {% endfor %}
-</div>
-{% endif %}
+<form class="catalog-toolbar"
+      hx-get="/"
+      hx-target="#product-grid"
+      hx-swap="outerHTML"
+      hx-push-url="true"
+      hx-trigger="input changed delay:400ms, change, submit">
+    <input type="search" name="q" value="{{ q }}" placeholder="Cari produk…"
+           class="toolbar-search" autocomplete="off">
+    <input type="number" name="min" value="{{ min }}" placeholder="Harga min"
+           min="0" step="1000" class="toolbar-price">
+    <input type="number" name="max" value="{{ max }}" placeholder="Harga maks"
+           min="0" step="1000" class="toolbar-price">
+    <select name="sort" class="toolbar-sort">
+        <option value="newest"{% if sort == "newest" %} selected{% endif %}>Terbaru</option>
+        <option value="price_asc"{% if sort == "price_asc" %} selected{% endif %}>Harga terendah</option>
+        <option value="price_desc"{% if sort == "price_desc" %} selected{% endif %}>Harga tertinggi</option>
+        <option value="name"{% if sort == "name" %} selected{% endif %}>Nama (A–Z)</option>
+    </select>
+    <noscript><button type="submit" class="btn">Cari</button></noscript>
+</form>
+
+{% include "catalog_grid.html" %}
 {% endblock %}

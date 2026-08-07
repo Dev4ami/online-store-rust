@@ -67,6 +67,20 @@ a:hover { text-decoration: underline; }
 .card-title { font-size: 1rem; margin: .75rem .9rem .25rem; }
 .card-price { font-weight: 700; color: var(--accent); margin: 0 .9rem 1rem; }
 
+/* Toolbar pencarian/filter katalog */
+.catalog-toolbar {
+    display: flex; flex-wrap: wrap; gap: .6rem; align-items: center;
+    margin-top: 1.25rem;
+}
+.catalog-toolbar input, .catalog-toolbar select {
+    padding: .55rem .7rem; border: 1px solid var(--border);
+    border-radius: 6px; font-size: .95rem; font-family: inherit; background: var(--card);
+}
+.catalog-toolbar .toolbar-search { flex: 1 1 220px; min-width: 160px; }
+.catalog-toolbar .toolbar-price { width: 120px; }
+.catalog-toolbar .toolbar-sort { margin-left: auto; }
+.grid-empty { margin-top: 1.5rem; }
+
 .empty { color: var(--muted); margin-top: 2rem; }
 
 /* Detail produk */

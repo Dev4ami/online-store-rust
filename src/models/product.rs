@@ -4,6 +4,37 @@ use rust_decimal::Decimal;
 use sqlx::PgPool;
 use uuid::Uuid;
 
+/// Urutan hasil katalog. Dipetakan dari/ke param query `sort`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProductSort {
+    Newest,
+    PriceAsc,
+    PriceDesc,
+    Name,
+}
+
+impl ProductSort {
+    /// Parse dari nilai query string; nilai tak dikenal → `Newest`.
+    pub fn from_query(s: &str) -> Self {
+        match s {
+            "price_asc" => Self::PriceAsc,
+            "price_desc" => Self::PriceDesc,
+            "name" => Self::Name,
+            _ => Self::Newest,
+        }
+    }
+
+    /// Nilai kanonik untuk di-echo balik ke `<option value=...>`/`selected`.
+    pub fn as_query(&self) -> &'static str {
+        match self {
+            Self::Newest => "newest",
+            Self::PriceAsc => "price_asc",
+            Self::PriceDesc => "price_desc",
+            Self::Name => "name",
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Product {
     pub id: Uuid,
@@ -33,19 +64,53 @@ impl Product {
         format_rupiah(self.price)
     }
 
-    /// Ambil semua produk aktif, terbaru dulu.
-    pub async fn list_active(pool: &PgPool) -> Result<Vec<Product>, sqlx::Error> {
-        sqlx::query_as!(
+    /// Cari & filter produk aktif untuk katalog publik.
+    /// - `q`: cocok pada nama (case-insensitive); metachar LIKE di-escape.
+    /// - `min`/`max`: batas harga inklusif.
+    /// - `sort`: urutan hasil.
+    ///
+    /// Satu `query_as!` (cek-compile) menerapkan filter opsional lewat pola
+    /// `($n IS NULL OR ...)`; pengurutan non-default dilakukan in-memory karena
+    /// struct `Product` tak memuat `created_at`.
+    pub async fn search(
+        pool: &PgPool,
+        q: Option<&str>,
+        min: Option<Decimal>,
+        max: Option<Decimal>,
+        sort: ProductSort,
+    ) -> Result<Vec<Product>, sqlx::Error> {
+        // Escape metachar LIKE agar user tak bisa menyisipkan wildcard.
+        let pattern = q.map(|s| format!("%{}%", escape_like(s)));
+
+        let mut products = sqlx::query_as!(
             Product,
             r#"
             SELECT id, slug, name, description, price, stock, image_url, is_active
             FROM products
             WHERE is_active = TRUE
+              AND ($1::text IS NULL OR name ILIKE $1 ESCAPE '\')
+              AND ($2::numeric IS NULL OR price >= $2)
+              AND ($3::numeric IS NULL OR price <= $3)
             ORDER BY created_at DESC
-            "#
+            "#,
+            pattern,
+            min,
+            max,
         )
         .fetch_all(pool)
-        .await
+        .await?;
+
+        // Dasar dari SQL sudah "terbaru dulu"; tinggal urutkan ulang bila perlu.
+        match sort {
+            ProductSort::Newest => {}
+            ProductSort::PriceAsc => products.sort_by(|a, b| a.price.cmp(&b.price)),
+            ProductSort::PriceDesc => products.sort_by(|a, b| b.price.cmp(&a.price)),
+            ProductSort::Name => {
+                products.sort_by_key(|p| p.name.to_lowercase());
+            }
+        }
+
+        Ok(products)
     }
 
     /// Ambil satu produk aktif berdasarkan slug.
@@ -202,6 +267,20 @@ impl Product {
             .rows_affected();
         Ok(rows > 0)
     }
+}
+
+/// Escape metachar pola LIKE/ILIKE (`\`, `%`, `_`) dengan backslash.
+/// Dipakai agar input pencarian diperlakukan sebagai teks literal, bukan wildcard.
+/// Pasangkan dengan klausa `ESCAPE '\'`.
+fn escape_like(input: &str) -> String {
+    let mut out = String::with_capacity(input.len());
+    for ch in input.chars() {
+        if matches!(ch, '\\' | '%' | '_') {
+            out.push('\\');
+        }
+        out.push(ch);
+    }
+    out
 }
 
 /// Format Decimal jadi Rupiah dengan pemisah ribuan titik.

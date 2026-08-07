@@ -13,6 +13,18 @@ pub struct IndexTemplate {
     pub products: Vec<Product>,
     pub cart_count: i32,
     pub user_name: Option<String>,
+    // Echo nilai toolbar agar terisi ulang saat full-load (mis. buka URL langsung).
+    pub q: String,
+    pub min: String,
+    pub max: String,
+    pub sort: String,
+}
+
+/// Partial grid produk (untuk swap HTMX saat pencarian/filter live).
+#[derive(Template)]
+#[template(path = "catalog_grid.html")]
+pub struct CatalogGridTemplate {
+    pub products: Vec<Product>,
 }
 
 #[derive(Template)]
