@@ -17,6 +17,11 @@ pub struct Config {
     /// Default `false` untuk dev lokal (HTTP) — kalau `true` di HTTP, cookie tak
     /// terkirim dan login putus. Aktifkan via `SECURE_COOKIES=true`.
     pub secure_cookies: bool,
+    /// Set `true` bila di belakang reverse proxy tepercaya (mis. Traefik/Coolify)
+    /// agar rate-limit login membaca IP klien asli dari `X-Forwarded-For`. Default
+    /// `false`: pakai IP soket (langsung). JANGAN `true` bila app terekspos langsung
+    /// ke internet — klien bisa memalsukan header & mengelabui rate-limit.
+    pub trust_proxy: bool,
 }
 
 impl Config {
@@ -41,6 +46,9 @@ impl Config {
         let secure_cookies = env::var("SECURE_COOKIES")
             .map(|s| s.trim().eq_ignore_ascii_case("true"))
             .unwrap_or(false);
+        let trust_proxy = env::var("TRUST_PROXY_HEADERS")
+            .map(|s| s.trim().eq_ignore_ascii_case("true"))
+            .unwrap_or(false);
         Ok(Self {
             database_url,
             bind_addr,
@@ -48,6 +56,7 @@ impl Config {
             admin_email,
             store_name,
             secure_cookies,
+            trust_proxy,
         })
     }
 }

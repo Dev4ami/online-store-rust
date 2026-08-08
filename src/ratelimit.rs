@@ -3,13 +3,38 @@
 //! Dipakai membatasi percobaan login/registrasi agar brute-force password
 //! tak leluasa (argon2 memperlambat per-percobaan, ini membatasi lajunya).
 //! Cukup untuk satu instance; untuk multi-instance/HA pakai store bersama
-//! (mis. Redis). Di belakang reverse proxy, IP yang terlihat = IP proxy —
-//! teruskan IP asli via header bila perlu granularitas per-klien.
+//! (mis. Redis). Di belakang reverse proxy IP soket = IP proxy; setel
+//! `TRUST_PROXY_HEADERS=true` agar `client_ip` membaca IP klien asli dari
+//! `X-Forwarded-For` (lihat fn tsb).
 
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
+
+/// Tentukan IP klien untuk rate-limit.
+///
+/// `peer` = IP soket (yang terlihat langsung; di belakang proxy = IP proxy).
+/// Bila `trust_proxy` true DAN `forwarded_for` ada, ambil entri **paling kanan**
+/// dari `X-Forwarded-For`. Alasan keamanan: dengan satu reverse proxy tepercaya
+/// (Traefik/Coolify), proxy meng-append IP soket yang ia terima di posisi paling
+/// kanan → itulah IP klien asli. Entri di kiri bisa dipalsukan klien, jadi TAK
+/// dipakai. Bila `trust_proxy` false, header diabaikan sepenuhnya (pakai `peer`)
+/// agar app yang terekspos langsung tak bisa dikelabui header palsu.
+pub fn client_ip(peer: IpAddr, forwarded_for: Option<&str>, trust_proxy: bool) -> IpAddr {
+    if trust_proxy {
+        if let Some(xff) = forwarded_for {
+            if let Some(ip) = xff
+                .rsplit(',')
+                .map(str::trim)
+                .find_map(|s| s.parse::<IpAddr>().ok())
+            {
+                return ip;
+            }
+        }
+    }
+    peer
+}
 
 pub struct RateLimiter {
     max: u32,
@@ -82,5 +107,35 @@ mod tests {
         assert!(!rl.check(ip));
         std::thread::sleep(Duration::from_millis(45));
         assert!(rl.check(ip)); // jendela baru
+    }
+
+    #[test]
+    fn client_ip_ignores_header_when_untrusted() {
+        let peer: IpAddr = "10.0.0.9".parse().unwrap();
+        // Header ada tapi trust_proxy=false → wajib pakai peer.
+        let got = client_ip(peer, Some("1.2.3.4"), false);
+        assert_eq!(got, peer);
+    }
+
+    #[test]
+    fn client_ip_uses_peer_when_no_header() {
+        let peer: IpAddr = "10.0.0.9".parse().unwrap();
+        assert_eq!(client_ip(peer, None, true), peer);
+    }
+
+    #[test]
+    fn client_ip_takes_rightmost_forwarded() {
+        let peer: IpAddr = "10.0.0.9".parse().unwrap();
+        // Klien memalsu "1.1.1.1" di kiri; proxy tepercaya append "203.0.113.7"
+        // di kanan → itu yang dipakai.
+        let got = client_ip(peer, Some("1.1.1.1, 203.0.113.7"), true);
+        assert_eq!(got, "203.0.113.7".parse::<IpAddr>().unwrap());
+    }
+
+    #[test]
+    fn client_ip_falls_back_on_garbage_header() {
+        let peer: IpAddr = "10.0.0.9".parse().unwrap();
+        // Nilai tak valid → skip, jatuh ke peer.
+        assert_eq!(client_ip(peer, Some("not-an-ip"), true), peer);
     }
 }

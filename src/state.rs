@@ -17,4 +17,7 @@ pub struct AppState {
     pub dummy_secret: String,
     /// Pembatas laju percobaan login/registrasi per-IP (anti brute-force).
     pub login_limiter: Arc<RateLimiter>,
+    /// Bila true, rate-limit membaca IP klien dari `X-Forwarded-For` (di belakang
+    /// proxy tepercaya spt Traefik/Coolify). Lihat `ratelimit::client_ip`.
+    pub trust_proxy: bool,
 }

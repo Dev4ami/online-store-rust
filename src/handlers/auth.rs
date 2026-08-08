@@ -5,6 +5,7 @@ use std::net::SocketAddr;
 use askama::Template;
 use axum::Form;
 use axum::extract::{ConnectInfo, State};
+use axum::http::HeaderMap;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use serde::Deserialize;
 use tower_sessions::Session;
@@ -35,6 +36,15 @@ fn email_valid(email: &str) -> bool {
     e.len() >= 5 && e.contains('@') && e.contains('.')
 }
 
+/// IP klien untuk rate-limit: hormati `X-Forwarded-For` hanya bila `trust_proxy`
+/// (di belakang proxy tepercaya). Logika pemilihan ada di `ratelimit::client_ip`.
+fn rate_limit_ip(headers: &HeaderMap, peer: std::net::IpAddr, trust_proxy: bool) -> std::net::IpAddr {
+    let xff = headers
+        .get("x-forwarded-for")
+        .and_then(|v| v.to_str().ok());
+    crate::ratelimit::client_ip(peer, xff, trust_proxy)
+}
+
 /// GET /register — tampilkan form.
 pub async fn register_form(
     State(state): State<AppState>,
@@ -58,11 +68,13 @@ pub async fn register_form(
 pub async fn register(
     State(state): State<AppState>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
     session: Session,
     Form(form): Form<RegisterForm>,
 ) -> Result<Response, AppError> {
     let email = form.email.trim();
     let cart_count = Cart::load(&session).await.total_qty();
+    let client_ip = rate_limit_ip(&headers, addr.ip(), state.trust_proxy);
 
     // Helper untuk render ulang form dengan pesan error.
     let render_err = |msg: &str| -> Result<Response, AppError> {
@@ -78,7 +90,7 @@ pub async fn register(
         Ok(Html(html).into_response())
     };
 
-    if !state.login_limiter.check(addr.ip()) {
+    if !state.login_limiter.check(client_ip) {
         return render_err("Terlalu banyak percobaan. Coba lagi beberapa menit.");
     }
     if !email_valid(email) {
@@ -124,11 +136,13 @@ pub async fn login_form(
 pub async fn login(
     State(state): State<AppState>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
     session: Session,
     Form(form): Form<LoginForm>,
 ) -> Result<Response, AppError> {
     let email = form.email.trim();
     let cart_count = Cart::load(&session).await.total_qty();
+    let client_ip = rate_limit_ip(&headers, addr.ip(), state.trust_proxy);
 
     let render_err = |msg: &str| -> Result<Response, AppError> {
         let html = LoginTemplate {
@@ -142,7 +156,7 @@ pub async fn login(
         Ok(Html(html).into_response())
     };
 
-    if !state.login_limiter.check(addr.ip()) {
+    if !state.login_limiter.check(client_ip) {
         return render_err("Terlalu banyak percobaan. Coba lagi beberapa menit.");
     }
 

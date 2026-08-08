@@ -1,0 +1,13 @@
+# Jangan kirim artefak besar / rahasia ke build context.
+target/
+.git/
+.env
+*.log
+
+# Data lokal yang tak boleh masuk image (foto unggahan dev, dsb).
+uploads/
+static/uploads/
+
+# Yang tak relevan untuk build.
+.claude/
+README.md

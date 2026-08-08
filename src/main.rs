@@ -81,6 +81,7 @@ async fn main() -> anyhow::Result<()> {
             5,
             std::time::Duration::from_secs(300),
         )),
+        trust_proxy: config.trust_proxy,
     };
 
     let app = Router::new()
