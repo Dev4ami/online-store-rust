@@ -238,3 +238,67 @@ a.btn-primary:hover { text-decoration: none; }
     .checkout-layout { grid-template-columns: 1fr; }
     .admin-form .form-row { grid-template-columns: 1fr; }
 }
+
+/* ---------- Nav responsif (hamburger, CSS-only) ---------- */
+/* Tombol burger disembunyikan di desktop; nav tampil inline seperti biasa. */
+.nav-burger { display: none; }
+
+@media (max-width: 640px) {
+    .site-header { flex-wrap: wrap; }
+    .brand { flex: 1; }
+    .nav-burger {
+        display: flex; flex-direction: column; justify-content: center; gap: 5px;
+        width: 42px; height: 42px; padding: 9px; cursor: pointer;
+        border: 1px solid var(--border); border-radius: 8px; background: var(--card);
+    }
+    .nav-burger span { display: block; height: 2px; background: var(--ink); border-radius: 2px; transition: transform .2s, opacity .2s; }
+    /* Nav jadi dropdown vertikal penuh, tersembunyi sampai toggle dicentang. */
+    .site-header nav {
+        flex-basis: 100%;
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: .15rem;
+        margin-top: .75rem;
+    }
+    .nav-toggle:checked ~ nav { display: flex; }
+    .site-header nav a,
+    .site-header nav .user-greet,
+    .site-header nav .logout-form { margin-left: 0; width: 100%; padding: .55rem .25rem; }
+    .site-header nav .btn-link-nav { text-align: left; }
+    /* Burger → ikon X saat menu terbuka. */
+    .nav-toggle:checked ~ .nav-burger span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav-toggle:checked ~ .nav-burger span:nth-child(2) { opacity: 0; }
+    .nav-toggle:checked ~ .nav-burger span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+}
+
+/* ---------- Feedback loading HTMX ---------- */
+/* htmx menambah kelas `.htmx-request` ke elemen pemicu selama request berjalan. */
+.htmx-request, .htmx-request * { cursor: progress; }
+form.htmx-request { opacity: .55; transition: opacity .1s ease; }
+.catalog-toolbar.htmx-request { opacity: .7; }
+
+/* ---------- Dark mode (ikut preferensi OS) ---------- */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #0f1115;
+        --card: #1a1d23;
+        --ink: #e6e8eb;
+        --muted: #9aa3af;
+        --accent: #3b82f6;
+        --border: #2b2f36;
+    }
+    /* Surface yang di-hardcode terang → gelapkan agar tak menyilaukan. */
+    .card-img, .detail-img { background: #22262e; }
+    .cart-table th { background: #22262e; }
+    .pagination .disabled { background: #22262e; }
+    .btn-secondary { background: var(--card); color: var(--ink); }
+    .btn-secondary:hover { background: #22262e; }
+    .form-error { background: #3b1d1d; color: #fca5a5; border-color: #7f1d1d; }
+    .badge-status { background: #3a2f12; color: #fcd34d; }
+    .badge-off { background: #2b2f36; color: var(--muted); }
+    .in-stock, .add-status, .order-confirm h1 { color: #34d399; }
+    .out-stock { color: #f87171; }
+    /* Sedikit redam gambar agar tak terlalu terang di tema gelap. */
+    .card-img img, .detail-img img { filter: brightness(.92); }
+}

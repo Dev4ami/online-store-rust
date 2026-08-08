@@ -4,12 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}{{ crate::templates::store_name() }}{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/style.css">
     <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
     <header class="site-header">
         <a class="brand" href="/">{{ crate::templates::store_name() }}</a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle" hidden>
+        <label for="nav-toggle" class="nav-burger" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </label>
         <nav>
             <a href="/">Katalog</a>
             <a href="/cart" class="cart-link">
@@ -37,7 +42,7 @@
     </main>
 
     <footer class="site-footer">
-        <p>&copy; {{ crate::templates::store_name() }} — dibuat dengan Rust.</p>
+        <p>&copy; 2026 {{ crate::templates::store_name() }}</p>
     </footer>
 </body>
 </html>

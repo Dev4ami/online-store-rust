@@ -4,11 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Admin — {{ crate::templates::store_name() }}{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <header class="site-header admin-header">
         <a class="brand" href="/admin">Admin · {{ crate::templates::store_name() }}</a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle" hidden>
+        <label for="nav-toggle" class="nav-burger" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </label>
         <nav>
             <a href="/admin/products">Produk</a>
             <a href="/admin/orders">Pesanan</a>
