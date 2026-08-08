@@ -13,6 +13,10 @@ pub struct Config {
     pub admin_email: Option<String>,
     /// Nama toko yang tampil di brand header, footer, dan judul tab. Default "Toko Online".
     pub store_name: String,
+    /// Set `true` di produksi (HTTPS) agar cookie session hanya dikirim lewat TLS.
+    /// Default `false` untuk dev lokal (HTTP) — kalau `true` di HTTP, cookie tak
+    /// terkirim dan login putus. Aktifkan via `SECURE_COOKIES=true`.
+    pub secure_cookies: bool,
 }
 
 impl Config {
@@ -33,6 +37,17 @@ impl Config {
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty())
             .unwrap_or_else(|| "Toko Online".to_string());
-        Ok(Self { database_url, bind_addr, payment_dummy_secret, admin_email, store_name })
+        // Aktif hanya bila diset persis "true" (case-insensitive). Selain itu false.
+        let secure_cookies = env::var("SECURE_COOKIES")
+            .map(|s| s.trim().eq_ignore_ascii_case("true"))
+            .unwrap_or(false);
+        Ok(Self {
+            database_url,
+            bind_addr,
+            payment_dummy_secret,
+            admin_email,
+            store_name,
+            secure_cookies,
+        })
     }
 }

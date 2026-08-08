@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE products p\n               SET stock = stock + oi.qty\n              FROM order_items oi\n             WHERE oi.order_id = $1 AND oi.product_id = p.id\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c41f9754365a63a4e11c13d33c56b7179b7bc60a7bf542cefc288b228026c4de"
+}

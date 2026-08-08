@@ -60,7 +60,8 @@ async fn main() -> anyhow::Result<()> {
     let session_store = PostgresStore::new(pool.clone());
     session_store.migrate().await?;
     let session_layer = SessionManagerLayer::new(session_store)
-        .with_secure(false) // set true di produksi (HTTPS)
+        // Dev (HTTP) default false; produksi set SECURE_COOKIES=true (butuh HTTPS).
+        .with_secure(config.secure_cookies)
         // Lax: cookie tetap ikut pada navigasi top-level dari luar (link masuk
         // tetap login) TAPI tidak pada POST lintas-situs — lapis pertama anti-CSRF,
         // dilengkapi token per-form (lihat `csrf`). Eksplisit agar tak bergantung default dep.

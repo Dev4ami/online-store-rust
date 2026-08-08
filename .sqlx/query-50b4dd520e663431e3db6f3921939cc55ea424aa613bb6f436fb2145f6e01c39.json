@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, number, user_id, email, customer_name, phone,\n                   shipping_address, status, subtotal, total,\n                   payment_method, payment_ref,\n                   paid_at as \"paid_at: chrono::DateTime<chrono::Utc>\",\n                   created_at as \"created_at: chrono::DateTime<chrono::Utc>\"\n            FROM orders WHERE user_id = $1\n            ORDER BY created_at DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "number",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "customer_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "phone",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "shipping_address",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "subtotal",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "total",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 10,
+        "name": "payment_method",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "payment_ref",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "paid_at: chrono::DateTime<chrono::Utc>",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "created_at: chrono::DateTime<chrono::Utc>",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "50b4dd520e663431e3db6f3921939cc55ea424aa613bb6f436fb2145f6e01c39"
+}

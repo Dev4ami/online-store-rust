@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT COUNT(*) FROM products\n            WHERE is_active = TRUE\n              AND ($1::text IS NULL OR name ILIKE $1 ESCAPE '\\')\n              AND ($2::numeric IS NULL OR price >= $2)\n              AND ($3::numeric IS NULL OR price <= $3)\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "c9b7c61e19c162ed80c3f38ead28de24f07236bf237ebb6f9afd9a77cba160d2"
+}

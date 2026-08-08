@@ -1,0 +1,69 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, slug, name, description, price, stock, image_url, is_active\n            FROM products\n            WHERE is_active = TRUE\n              AND ($1::text IS NULL OR name ILIKE $1 ESCAPE '\\')\n              AND ($2::numeric IS NULL OR price >= $2)\n              AND ($3::numeric IS NULL OR price <= $3)\n            ORDER BY\n              CASE WHEN $4 = 'price_asc'  THEN price END ASC,\n              CASE WHEN $4 = 'price_desc' THEN price END DESC,\n              CASE WHEN $4 = 'name'       THEN lower(name) END ASC,\n              created_at DESC\n            LIMIT $5 OFFSET $6\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "stock",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "image_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "is_active",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "4b10a55bd9978d2e086e7e724e11e38060991e9b9f0d298caed30ff50861630d"
+}

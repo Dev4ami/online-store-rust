@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE products\n               SET slug = $2, name = $3, description = $4,\n                   price = $5, stock = $6, image_url = $7, is_active = $8\n             WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Numeric",
+        "Int4",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "23102127851ce6e516d49e12ae00a08d872e6aedcaf7384b831eb5df3a04482b"
+}
