@@ -3,6 +3,7 @@
     {% if lines.is_empty() %}
     <p class="empty">Keranjang kosong. <a href="/">Belanja dulu</a>.</p>
     {% else %}
+    <div class="table-wrap">
     <table class="cart-table">
         <thead>
             <tr><th>Produk</th><th>Harga</th><th>Jumlah</th><th>Subtotal</th><th></th></tr>
@@ -40,6 +41,7 @@
             </tr>
         </tfoot>
     </table>
+    </div>
     <div class="cart-actions">
         <a href="/" class="btn-secondary">Lanjut Belanja</a>
         <a href="/checkout" class="btn-primary">Checkout</a>

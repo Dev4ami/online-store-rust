@@ -157,6 +157,10 @@ a:hover { text-decoration: underline; }
 .qty-input { width: 4.5rem; padding: .4rem .5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
 .add-status { color: #059669; font-size: .9rem; min-height: 1.2rem; margin: .25rem 0 0; }
 
+/* Pembungkus tabel: scroll samping di layar sempit tanpa merusak layout halaman. */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-wrap .cart-table { min-width: 460px; }
+
 /* Tabel keranjang */
 .cart-table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .cart-table th, .cart-table td { padding: .75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }

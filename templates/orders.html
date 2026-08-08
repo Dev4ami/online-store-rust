@@ -8,6 +8,7 @@
 {% if orders.is_empty() %}
 <p class="empty">Belum ada pesanan. <a href="/">Belanja dulu</a>.</p>
 {% else %}
+<div class="table-wrap">
 <table class="cart-table">
     <thead>
         <tr><th>No.</th><th>Tanggal</th><th>Status</th><th>Total</th><th></th></tr>
@@ -24,5 +25,6 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 {% endif %}
 {% endblock %}
