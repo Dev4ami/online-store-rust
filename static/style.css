@@ -281,6 +281,8 @@ form.htmx-request { opacity: .55; transition: opacity .1s ease; }
 /* ---------- Dark mode (ikut preferensi OS) ---------- */
 @media (prefers-color-scheme: dark) {
     :root {
+        /* Render kontrol native (spinner number, scrollbar, dropdown) versi gelap. */
+        color-scheme: dark;
         --bg: #0f1115;
         --card: #1a1d23;
         --ink: #e6e8eb;
