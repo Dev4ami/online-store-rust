@@ -59,7 +59,7 @@ pub struct NewProduct {
 }
 
 /// Jumlah produk per halaman katalog.
-pub const PER_PAGE: i64 = 24;
+pub const PER_PAGE: i64 = 12;
 
 /// Satu halaman hasil katalog: produk halaman ini + total (untuk hitung jumlah halaman).
 pub struct ProductPage {
