@@ -9,8 +9,12 @@ pub struct Config {
     /// Rahasia bersama untuk verifikasi webhook gateway dummy (dev).
     /// Ganti dengan secret gateway asli saat gateway nyata dipilih.
     pub payment_dummy_secret: String,
-    /// Email akun yang otomatis dipromosikan jadi admin saat startup (opsional).
+    /// Email akun admin yang dipastikan ada saat startup (opsional).
     pub admin_email: Option<String>,
+    /// Sandi untuk seed akun admin baru bila `admin_email` belum terdaftar
+    /// (opsional). Bila kosong, admin hanya dipromosikan dari akun yang sudah
+    /// ada (tak bisa buat akun baru). Password akun lama tak pernah ditimpa.
+    pub admin_password: Option<String>,
     /// Nama toko yang tampil di brand header, footer, dan judul tab. Default "Toko Online".
     pub store_name: String,
     /// Set `true` di produksi (HTTPS) agar cookie session hanya dikirim lewat TLS.
@@ -37,6 +41,8 @@ impl Config {
             .ok()
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty());
+        // Sandi seed admin (jangan trim: sandi bisa sengaja pakai spasi tepi).
+        let admin_password = env::var("ADMIN_PASSWORD").ok().filter(|s| !s.is_empty());
         let store_name = env::var("STORE_NAME")
             .ok()
             .map(|s| s.trim().to_string())
@@ -54,6 +60,7 @@ impl Config {
             bind_addr,
             payment_dummy_secret,
             admin_email,
+            admin_password,
             store_name,
             secure_cookies,
             trust_proxy,

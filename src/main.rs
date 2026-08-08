@@ -26,7 +26,7 @@ use tower_sessions_sqlx_store::PostgresStore;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::config::Config;
-use crate::models::user::User;
+use crate::models::user::{AdminSeed, User};
 use crate::payment::PaymentGateway;
 use crate::payment::dummy::DummyGateway;
 use crate::state::AppState;
@@ -47,12 +47,28 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("menghubungkan ke database & menjalankan migrasi...");
     let pool = db::connect_and_migrate(&config.database_url).await?;
 
-    // Promote akun admin dari env (idempoten; senyap bila email tak ada di DB).
+    // Pastikan akun admin dari env (idempoten). Bila ADMIN_PASSWORD diset & email
+    // belum terdaftar, akun admin dibuat otomatis → deploy toko baru langsung siap.
     if let Some(email) = &config.admin_email {
-        match User::promote_admin(&pool, email).await {
-            Ok(true) => tracing::info!("admin di-set: {email}"),
-            Ok(false) => {} // sudah admin atau email tak terdaftar
-            Err(e) => tracing::warn!("gagal promote admin {email}: {e}"),
+        // Hash sandi seed di luar query agar error hashing terpisah dari error DB.
+        let hash = match &config.admin_password {
+            Some(pw) => match auth::hash_password(pw) {
+                Ok(h) => Some(h),
+                Err(_) => {
+                    tracing::warn!("gagal hash ADMIN_PASSWORD; admin tak di-seed");
+                    None
+                }
+            },
+            None => None,
+        };
+        match User::ensure_admin(&pool, email, hash.as_deref()).await {
+            Ok(AdminSeed::Created) => tracing::info!("akun admin dibuat dari env: {email}"),
+            Ok(AdminSeed::Promoted) => tracing::info!("akun dipromosikan admin: {email}"),
+            Ok(AdminSeed::AlreadyAdmin) => {}
+            Ok(AdminSeed::Skipped) => tracing::warn!(
+                "ADMIN_EMAIL {email} belum terdaftar & ADMIN_PASSWORD kosong — admin tak dibuat"
+            ),
+            Err(e) => tracing::warn!("gagal set admin {email}: {e}"),
         }
     }
 
