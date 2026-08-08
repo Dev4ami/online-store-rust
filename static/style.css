@@ -151,6 +151,8 @@ a:hover { text-decoration: underline; }
 
 /* Form add-to-cart di detail */
 .add-form { display: flex; align-items: flex-end; gap: .75rem; margin: 1rem 0 .25rem; }
+/* Tombol sejajar dasar input Jumlah (batalkan margin global .btn-primary). */
+.add-form .btn-primary { margin: 0; }
 .qty-label { display: flex; flex-direction: column; font-size: .8rem; color: var(--muted); gap: .2rem; }
 .qty-input { width: 4.5rem; padding: .4rem .5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
 .add-status { color: #059669; font-size: .9rem; min-height: 1.2rem; margin: .25rem 0 0; }
