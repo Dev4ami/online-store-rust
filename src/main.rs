@@ -21,6 +21,7 @@ use tower_http::compression::CompressionLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use tower_sessions::cookie::SameSite;
+use tower_sessions::session_store::ExpiredDeletion;
 use tower_sessions::{Expiry, SessionManagerLayer};
 use tower_sessions_sqlx_store::PostgresStore;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
@@ -75,6 +76,20 @@ async fn main() -> anyhow::Result<()> {
     // Session store di Postgres (persist lintas restart).
     let session_store = PostgresStore::new(pool.clone());
     session_store.migrate().await?;
+
+    // Pembersih session kedaluwarsa: tanpa ini tabel session tumbuh tanpa batas
+    // (tiap pengunjung, termasuk guest yang add-to-cart, bikin row). Jalan tiap
+    // jam di background; error dicatat & task berhenti (bukan crash server).
+    let cleanup_store = session_store.clone();
+    tokio::task::spawn(async move {
+        if let Err(e) = cleanup_store
+            .continuously_delete_expired(tokio::time::Duration::from_secs(3600))
+            .await
+        {
+            tracing::error!("pembersih session berhenti: {e}");
+        }
+    });
+
     let session_layer = SessionManagerLayer::new(session_store)
         // Dev (HTTP) default false; produksi set SECURE_COOKIES=true (butuh HTTPS).
         .with_secure(config.secure_cookies)
