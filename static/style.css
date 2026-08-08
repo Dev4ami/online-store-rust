@@ -163,14 +163,34 @@ a:hover { text-decoration: underline; }
 
 /* Tabel keranjang */
 .cart-table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.cart-table th, .cart-table td { padding: .75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
-.cart-table th { background: #f9fafb; font-size: .85rem; color: var(--muted); }
-.cart-table tfoot td { border-bottom: none; font-weight: 700; }
-.total-label { text-align: right; }
-.grand-total { color: var(--accent); }
-.qty-form { margin: 0; }
-.btn-link { background: none; border: none; color: #dc2626; cursor: pointer; font-size: 1rem; }
-.cart-actions { display: flex; justify-content: space-between; margin-top: 1.25rem; gap: 1rem; }
+.cart-table th, .cart-table td { padding: .85rem 1rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.cart-table th { background: #f9fafb; font-size: .78rem; letter-spacing: .03em; text-transform: uppercase; color: var(--muted); }
+/* Baris highlight saat hover (umpan balik halus, bukan link). */
+.cart-table tbody tr { transition: background .12s ease; }
+.cart-table tbody tr:hover { background: rgba(37,99,235,.04); }
+.cart-table tbody tr:last-child td { border-bottom: none; }
+/* Angka rata kanan agar mudah dibandingkan; Jumlah & aksi di tengah. */
+.cart-table thead th:nth-child(2), .cart-table thead th:nth-child(4),
+.cart-table tbody td:nth-child(2), .cart-table tbody td:nth-child(4) { text-align: right; font-variant-numeric: tabular-nums; }
+.cart-table thead th:nth-child(3), .cart-table tbody td:nth-child(3),
+.cart-table thead th:nth-child(5), .cart-table tbody td:nth-child(5) { text-align: center; }
+.cart-table tbody td:first-child a { font-weight: 600; }
+.cart-table tfoot td { border-bottom: none; border-top: 2px solid var(--border); font-weight: 700; padding-top: 1rem; padding-bottom: 1rem; }
+.total-label { text-align: right; text-transform: uppercase; font-size: .85rem; letter-spacing: .03em; color: var(--muted); }
+.grand-total { color: var(--accent); font-size: 1.15rem; text-align: right; font-variant-numeric: tabular-nums; }
+.qty-form { margin: 0; display: flex; justify-content: center; }
+/* Input jumlah di baris keranjang: ringkas & teks di tengah. */
+.cart-table .qty-input { width: 4rem; text-align: center; }
+/* Tombol hapus: ikon bulat, hover merah lembut agar jelas bisa diklik. */
+.btn-link {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2rem; height: 2rem; line-height: 1;
+    background: none; border: none; border-radius: 999px;
+    color: var(--muted); cursor: pointer; font-size: 1rem;
+    transition: background .12s ease, color .12s ease;
+}
+.btn-link:hover { background: rgba(220,38,38,.1); color: #dc2626; }
+.cart-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; gap: 1rem; }
 .btn-secondary {
     background: #fff; color: var(--ink); border: 1px solid var(--border);
     padding: .7rem 1.25rem; border-radius: 8px; font-size: 1rem; cursor: pointer; text-decoration: none;
