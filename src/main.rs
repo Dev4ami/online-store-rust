@@ -7,6 +7,7 @@ mod error;
 mod handlers;
 mod models;
 mod payment;
+mod ratelimit;
 mod state;
 mod templates;
 mod uploads;
@@ -74,6 +75,11 @@ async fn main() -> anyhow::Result<()> {
         pool,
         gateway,
         dummy_secret: config.payment_dummy_secret.clone(),
+        // Maks 5 percobaan login/registrasi per IP tiap 5 menit.
+        login_limiter: Arc::new(ratelimit::RateLimiter::new(
+            5,
+            std::time::Duration::from_secs(300),
+        )),
     };
 
     let app = Router::new()
@@ -132,7 +138,13 @@ async fn main() -> anyhow::Result<()> {
 
     let listener = tokio::net::TcpListener::bind(&config.bind_addr).await?;
     tracing::info!("server berjalan di http://{}", config.bind_addr);
-    axum::serve(listener, app).await?;
+    // `into_make_service_with_connect_info` agar handler bisa ekstrak
+    // `ConnectInfo<SocketAddr>` (dipakai rate-limit login per-IP).
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .await?;
 
     Ok(())
 }

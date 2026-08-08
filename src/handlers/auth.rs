@@ -1,8 +1,10 @@
 //! Handler autentikasi: registrasi, login, logout.
 
+use std::net::SocketAddr;
+
 use askama::Template;
 use axum::Form;
-use axum::extract::State;
+use axum::extract::{ConnectInfo, State};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use serde::Deserialize;
 use tower_sessions::Session;
@@ -55,6 +57,7 @@ pub async fn register_form(
 /// POST /register — buat akun lalu login otomatis.
 pub async fn register(
     State(state): State<AppState>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     session: Session,
     Form(form): Form<RegisterForm>,
 ) -> Result<Response, AppError> {
@@ -75,6 +78,9 @@ pub async fn register(
         Ok(Html(html).into_response())
     };
 
+    if !state.login_limiter.check(addr.ip()) {
+        return render_err("Terlalu banyak percobaan. Coba lagi beberapa menit.");
+    }
     if !email_valid(email) {
         return render_err("Format email tidak valid.");
     }
@@ -117,6 +123,7 @@ pub async fn login_form(
 /// POST /login — verifikasi kredensial.
 pub async fn login(
     State(state): State<AppState>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     session: Session,
     Form(form): Form<LoginForm>,
 ) -> Result<Response, AppError> {
@@ -134,6 +141,10 @@ pub async fn login(
         .render()?;
         Ok(Html(html).into_response())
     };
+
+    if !state.login_limiter.check(addr.ip()) {
+        return render_err("Terlalu banyak percobaan. Coba lagi beberapa menit.");
+    }
 
     // Pesan sama untuk email tak ada / password salah (hindari user enumeration).
     let user = match User::by_email(&state.pool, email).await? {
