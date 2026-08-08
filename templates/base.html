@@ -22,6 +22,7 @@
                 <a href="/orders">Pesanan</a>
                 <span class="user-greet">Halo, {{ nama }}</span>
                 <form action="/logout" method="post" class="logout-form">
+                    <input type="hidden" name="csrf_token" value="{{ crate::csrf::token() }}">
                     <button type="submit" class="btn-link-nav">Keluar</button>
                 </form>
                 {% when None %}

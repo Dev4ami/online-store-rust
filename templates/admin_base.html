@@ -15,6 +15,7 @@
             <a href="/">&larr; ke Toko</a>
             <span class="user-greet">Halo, {{ admin_name }}</span>
             <form action="/logout" method="post" class="logout-form">
+                <input type="hidden" name="csrf_token" value="{{ crate::csrf::token() }}">
                 <button type="submit" class="btn-link-nav">Keluar</button>
             </form>
         </nav>

@@ -15,6 +15,7 @@
                 <td>
                     <form hx-post="/cart/update" hx-target="#cart-contents" hx-swap="outerHTML"
                           hx-trigger="change from:find input[name='qty']" class="qty-form">
+                        <input type="hidden" name="csrf_token" value="{{ crate::csrf::token() }}">
                         <input type="hidden" name="product_id" value="{{ line.product.id }}">
                         <input type="number" name="qty" value="{{ line.qty }}" min="0"
                                max="{{ line.product.stock }}" class="qty-input">
@@ -23,6 +24,7 @@
                 <td>{{ line.line_total_display() }}</td>
                 <td>
                     <form hx-post="/cart/remove" hx-target="#cart-contents" hx-swap="outerHTML">
+                        <input type="hidden" name="csrf_token" value="{{ crate::csrf::token() }}">
                         <input type="hidden" name="product_id" value="{{ line.product.id }}">
                         <button type="submit" class="btn-link" title="Hapus">✕</button>
                     </form>

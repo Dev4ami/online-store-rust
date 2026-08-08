@@ -23,6 +23,7 @@
               hx-target="#cart-badge"
               hx-swap="none"
               class="add-form">
+            <input type="hidden" name="csrf_token" value="{{ crate::csrf::token() }}">
             <input type="hidden" name="product_id" value="{{ product.id }}">
             <label class="qty-label">Jumlah
                 <input type="number" name="qty" value="1" min="1" max="{{ product.stock }}" class="qty-input">

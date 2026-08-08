@@ -32,6 +32,7 @@
                 <a href="/admin/products/{{ p.id }}/edit" class="btn-secondary btn-sm">Edit</a>
                 <form action="/admin/products/{{ p.id }}/delete" method="post"
                       onsubmit="return confirm('Hapus produk &quot;{{ p.name }}&quot; permanen? Tindakan ini tak bisa dibatalkan.')">
+                    <input type="hidden" name="csrf_token" value="{{ crate::csrf::token() }}">
                     <button type="submit" class="btn-danger btn-sm">Hapus</button>
                 </form>
             </td>

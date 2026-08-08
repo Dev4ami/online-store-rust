@@ -1,6 +1,7 @@
 mod auth;
 mod cart;
 mod config;
+mod csrf;
 mod db;
 mod error;
 mod handlers;
@@ -18,6 +19,7 @@ use axum::routing::{get, post};
 use tower_http::compression::CompressionLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
+use tower_sessions::cookie::SameSite;
 use tower_sessions::{Expiry, SessionManagerLayer};
 use tower_sessions_sqlx_store::PostgresStore;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
@@ -58,6 +60,10 @@ async fn main() -> anyhow::Result<()> {
     session_store.migrate().await?;
     let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(false) // set true di produksi (HTTPS)
+        // Lax: cookie tetap ikut pada navigasi top-level dari luar (link masuk
+        // tetap login) TAPI tidak pada POST lintas-situs — lapis pertama anti-CSRF,
+        // dilengkapi token per-form (lihat `csrf`). Eksplisit agar tak bergantung default dep.
+        .with_same_site(SameSite::Lax)
         .with_expiry(Expiry::OnInactivity(time::Duration::days(30)));
 
     // Gateway pembayaran. Dummy untuk dev; ganti implementor saat gateway nyata dipilih.
@@ -116,6 +122,9 @@ async fn main() -> anyhow::Result<()> {
             post(handlers::admin::order_cancel),
         )
         .nest_service("/static", ServeDir::new("static"))
+        // CSRF di dalam session_layer: Session harus sudah ada di extensions saat
+        // middleware jalan. `session_layer` ditambah setelahnya = lapisan luar.
+        .layer(axum::middleware::from_fn(csrf::middleware))
         .layer(session_layer)
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())

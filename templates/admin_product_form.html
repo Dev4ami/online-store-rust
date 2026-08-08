@@ -12,6 +12,7 @@
     {% endmatch %}
 
     <form action="{{ action_url }}" method="post" class="admin-form" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ crate::csrf::token() }}">
         <label>
             Nama
             <input type="text" name="name" value="{{ name }}" required>

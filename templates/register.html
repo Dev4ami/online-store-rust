@@ -12,6 +12,7 @@
     {% endmatch %}
 
     <form action="/register" method="post" class="auth-form">
+        <input type="hidden" name="csrf_token" value="{{ crate::csrf::token() }}">
         <label>Nama
             <input type="text" name="name" value="{{ name }}" placeholder="Nama kamu">
         </label>

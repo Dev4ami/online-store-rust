@@ -8,6 +8,9 @@ pub enum AppError {
     #[error("halaman tidak ditemukan")]
     NotFound,
 
+    #[error("akses ditolak")]
+    Forbidden,
+
     #[error("kesalahan database: {0}")]
     Database(#[from] sqlx::Error),
 
@@ -25,6 +28,11 @@ impl IntoResponse for AppError {
                 StatusCode::NOT_FOUND,
                 "404 — Tidak Ditemukan",
                 "Produk atau halaman yang kamu cari tidak ada.".to_string(),
+            ),
+            AppError::Forbidden => (
+                StatusCode::FORBIDDEN,
+                "403 — Akses Ditolak",
+                "Permintaan tidak sah (token keamanan tidak valid). Muat ulang halaman lalu coba lagi.".to_string(),
             ),
             AppError::Database(e) => {
                 tracing::error!("database error: {e}");

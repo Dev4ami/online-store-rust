@@ -23,10 +23,12 @@
 {% if order.is_pending() %}
 <div class="admin-order-actions">
     <form action="/admin/orders/{{ order.id }}/pay" method="post">
+        <input type="hidden" name="csrf_token" value="{{ crate::csrf::token() }}">
         <button type="submit" class="btn-primary">Tandai Lunas</button>
     </form>
     <form action="/admin/orders/{{ order.id }}/cancel" method="post"
           onsubmit="return confirm('Batalkan pesanan #{{ order.number }}? Stok akan dikembalikan.')">
+        <input type="hidden" name="csrf_token" value="{{ crate::csrf::token() }}">
         <button type="submit" class="btn-danger">Batalkan</button>
     </form>
 </div>

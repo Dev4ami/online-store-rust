@@ -12,6 +12,7 @@ use tower_sessions::Session;
 use uuid::Uuid;
 
 use crate::auth;
+use crate::csrf;
 use crate::error::AppError;
 use crate::models::order::Order;
 use crate::models::product::{NewProduct, Product};
@@ -98,6 +99,8 @@ pub struct ProductForm {
     pub stock: String,
     // Checkbox: hadir ("on") bila dicentang, absen bila tidak.
     pub is_active: Option<String>,
+    // Token CSRF (multipart tak dicek middleware; divalidasi di handler).
+    pub csrf: String,
 }
 
 /// Uraikan `multipart/form-data` form produk jadi (field teks, bytes gambar opsional).
@@ -136,6 +139,7 @@ async fn parse_product_multipart(
                     "price" => form.price = val,
                     "stock" => form.stock = val,
                     "is_active" => form.is_active = Some(val),
+                    "csrf_token" => form.csrf = val,
                     _ => {}
                 }
             }
@@ -228,6 +232,9 @@ pub async fn product_create(
     let admin = require_admin(&session, &state).await?;
     let action = "/admin/products".to_string();
     let (form, image) = parse_product_multipart(multipart).await?;
+    if !csrf::verify(&session, &form.csrf).await {
+        return Err(AppError::Forbidden);
+    }
 
     let mut new = match validate_product(&form) {
         Ok(n) => n,
@@ -286,6 +293,9 @@ pub async fn product_update(
     let admin = require_admin(&session, &state).await?;
     let action = format!("/admin/products/{id}");
     let (form, image) = parse_product_multipart(multipart).await?;
+    if !csrf::verify(&session, &form.csrf).await {
+        return Err(AppError::Forbidden);
+    }
 
     // Gambar produk saat ini (untuk dipertahankan bila tak ada unggahan baru,
     // dan untuk preview di form saat validasi gagal).

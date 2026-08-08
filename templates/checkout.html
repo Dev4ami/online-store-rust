@@ -12,6 +12,7 @@
 
 <div class="checkout-layout">
     <form action="/checkout" method="post" class="checkout-form">
+        <input type="hidden" name="csrf_token" value="{{ crate::csrf::token() }}">
         <h3>Data Pengiriman</h3>
         <label>Nama Penerima
             <input type="text" name="customer_name" value="{{ customer_name }}" required>
